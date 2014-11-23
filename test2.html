@@ -16,7 +16,6 @@ svg {
 <div id="pmap">
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.1/d3.min.js"></script>
-<script src="rbtree.js"></script>
 <script src="force.js"></script>
 <script>
 var svg = d3.select("#pmap").append("svg")
@@ -88,6 +87,7 @@ var facePolygons = linkgroup.selectAll("polygon")
 	.attr("stroke","")
 	.on("mouseover",function(d,i) { d3.select(this).style("fill-opacity",1);})
 	.on("mouseout",function(d,i) { d3.select(this).style("fill-opacity",0);})
+	.on("mousemove",polygonMouseMove);
 
 var linkLines = linkgroup.selectAll("line.link")
 	.data(function(d) { return d.links;	})
@@ -114,6 +114,10 @@ var nodeLabels = nodeGroups.append("text")
 	.attr("dx",9)
 	.style("text-anchor","start")
 	.text(function(d,i) {return i;});
+
+var corners = [];
+var cornerPolygon = svg.selectAll("polygon.corner")
+	.data(corners);
 
 /*   	
 var forceLines = svg.selectAll("line.forcevec")
@@ -144,6 +148,46 @@ function dragend(d)
 {
 	force.dragforce().drag = false;
 }
+function polygonMouseMove(d,i)
+{
+	
+	var mouse = fromScreenCoor({x: d3.mouse(this)[0],y: d3.mouse(this)[1]});
+	var mindistSq = 1000;
+	var minnode = 0;
+	var mincorner = 0;
+	d.links.forEach(function(l,i){
+		var thisnode = links[l.id][l.ccw?0:1];
+		var distSq = mouse.copy().subVec( nodes[thisnode].pos ).normSq();
+		if( distSq < mindistSq )
+		{
+			mindistSq = distSq;
+			minnode = thisnode;
+			mincorner = i;
+		}
+	});
+	
+	if( mindistSq < 0.3 )
+	{
+		corners[0] = { c: nodes[minnode].pos, r: 20 };
+		cornerPolygon = cornerPolygon.data(corners);
+		cornerPolygon.enter()
+			.insert("circle")
+			.attr("r",function(d){return d.r;})
+			.attr("cx",function(d){return toScreenCoor(d.c).x;})
+			.attr("cy",function(d){return toScreenCoor(d.c).y;})
+			.attr("fill","orange");
+	} else
+	{
+		while(corners.length > 0) {
+    		corners.pop();
+		}
+		cornerPolygon = cornerPolygon.data(corners);
+		cornerPolygon.exit().remove();
+	}
+}
+
+console.log(cornerPolygon);
+console.log(corners);
 
 function updateMap()
 {
@@ -161,6 +205,12 @@ function updateMap()
 	.attr("x2", function(d) { return toScreenCoor(nodes[links[d.id][1]].pos).x; })
 	.attr("y2", function(d) { return toScreenCoor(nodes[links[d.id][1]].pos).y; });
 	
+	cornerPolygon
+		.attr("r",function(d){return d.r;})
+		.attr("cx",function(d){return toScreenCoor(d.c).x;})
+		.attr("cy",function(d){return toScreenCoor(d.c).y;})
+		.attr("fill","orange");
+	
 	/*
 	forceLines
 	.attr("x1", function(d) { return toScreenCoor(d.pos).x; })
@@ -175,6 +225,8 @@ function updateMap()
 			return [coor.x,coor.y].join(","); 
 		}).join(" ");
 	});
+	
+	
 	/*facePolygons.attr("fill",function(d) {
 		return (CMap.faceIsNonSimple(d,links,nodes) ? "red" : "#ccffcc");
 	});*/
