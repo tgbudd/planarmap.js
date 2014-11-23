@@ -2,12 +2,12 @@ function Vec2(x_,y_)
 {
 	this.x = x_;
 	this.y = y_;
-	this.addVec = function(vec_){ this.x += vec_.x; this.y += vec_.y; return this; }
-	this.subVec = function(vec_){ this.x -= vec_.x; this.y -= vec_.y; return this; }
-	this.mult = function(r) { this.x *= r; this.y *= r; return this; }
-	this.divide = function(r) { return this.mult(1/r); }
-	this.dot = function(vec_) { return (this.x*vec_.x+this.y*vec_.y); }
-	this.cross = function(vec_) { return (this.x*vec_.y-this.y*vec_.x); }
+	this.addVec = function(vec_){ this.x += vec_.x; this.y += vec_.y; return this; };
+	this.subVec = function(vec_){ this.x -= vec_.x; this.y -= vec_.y; return this; };
+	this.mult = function(r) { this.x *= r; this.y *= r; return this; };
+	this.divide = function(r) { return this.mult(1/r); };
+	this.dot = function(vec_) { return (this.x*vec_.x+this.y*vec_.y); };
+	this.cross = function(vec_) { return (this.x*vec_.y-this.y*vec_.x); };
 	this.angle = function(vec_) {
 		// Returns the angle (between -PI and PI) this has to be rotated in
 		// counterclockwise direction to align it with vec_. 
@@ -15,12 +15,20 @@ function Vec2(x_,y_)
 		if( scale <= 0 )
 			return NaN;
 		return Math.atan2(this.cross(vec_)/scale,this.dot(vec_)/scale);
-	}
-	this.norm = function() { return Math.sqrt(this.dot(this)); }
-	this.normSq = function() { return this.dot(this); }
-	this.normalize = function() { var n = this.norm(); return this.divide(n); }
-	this.zero = function() { this.x=0;this.y=0; return this; }
-	this.copy = function() { return new Vec2(this.x,this.y); }
+	};
+	this.rotate = function(angle) { 
+		var cosine = Math.cos(angle);
+		var sine = Math.sin(angle);
+		var tmpx = cosine * this.x - sine * this.y;
+		this.y = sine * this.x + cosine * this.y;
+		this.x = tmpx;
+		return this;	
+	};
+	this.norm = function() { return Math.sqrt(this.dot(this)); };
+	this.normSq = function() { return this.dot(this); };
+	this.normalize = function() { var n = this.norm(); return this.divide(n); };
+	this.zero = function() { this.x=0;this.y=0; return this; };
+	this.copy = function() { return new Vec2(this.x,this.y); };
 }
 
 
