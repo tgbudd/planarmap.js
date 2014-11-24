@@ -1,35 +1,34 @@
-function Vec2(x_,y_)
+var Vec2 = function (x_,y_)
 {
 	this.x = x_;
 	this.y = y_;
-	this.addVec = function(vec_){ this.x += vec_.x; this.y += vec_.y; return this; };
-	this.subVec = function(vec_){ this.x -= vec_.x; this.y -= vec_.y; return this; };
-	this.mult = function(r) { this.x *= r; this.y *= r; return this; };
-	this.divide = function(r) { return this.mult(1/r); };
-	this.dot = function(vec_) { return (this.x*vec_.x+this.y*vec_.y); };
-	this.cross = function(vec_) { return (this.x*vec_.y-this.y*vec_.x); };
-	this.angle = function(vec_) {
-		// Returns the angle (between -PI and PI) this has to be rotated in
-		// counterclockwise direction to align it with vec_. 
-		var scale = this.norm()*vec_.norm();
-		if( scale <= 0 )
-			return NaN;
-		return Math.atan2(this.cross(vec_)/scale,this.dot(vec_)/scale);
-	};
-	this.rotate = function(angle) { 
-		var cosine = Math.cos(angle);
-		var sine = Math.sin(angle);
-		var tmpx = cosine * this.x - sine * this.y;
-		this.y = sine * this.x + cosine * this.y;
-		this.x = tmpx;
-		return this;	
-	};
-	this.norm = function() { return Math.sqrt(this.dot(this)); };
-	this.normSq = function() { return this.dot(this); };
-	this.normalize = function() { var n = this.norm(); return this.divide(n); };
-	this.zero = function() { this.x=0;this.y=0; return this; };
-	this.copy = function() { return new Vec2(this.x,this.y); };
-}
+};
+
+Vec2.prototype.addVec = function(vec_){ this.x += vec_.x; this.y += vec_.y; return this; };
+Vec2.prototype.subVec = function(vec_){ this.x -= vec_.x; this.y -= vec_.y; return this; };
+Vec2.prototype.mult = function(r) { this.x *= r; this.y *= r; return this; };
+Vec2.prototype.divide = function(r) { return this.mult(1/r); };
+Vec2.prototype.dot = function(vec_) { return (this.x*vec_.x+this.y*vec_.y); };
+Vec2.prototype.cross = function(vec_) { return (this.x*vec_.y-this.y*vec_.x); };
+Vec2.prototype.angle = function(vec_) {
+	// Returns the angle (between -PI and PI) this has to be rotated in
+	// counterclockwise direction to align it with vec_. 
+	return Math.atan2(this.cross(vec_),this.dot(vec_));
+};
+Vec2.prototype.rotate = function(angle) { 
+	var cosine = Math.cos(angle);
+	var sine = Math.sin(angle);
+	var tmpx = cosine * this.x - sine * this.y;
+	this.y = sine * this.x + cosine * this.y;
+	this.x = tmpx;
+	return this;	
+};
+Vec2.prototype.norm = function() { return Math.sqrt(this.dot(this)); };
+Vec2.prototype.normSq = function() { return this.dot(this); };
+Vec2.prototype.normalize = function() { var n = this.norm(); return this.divide(n); };
+Vec2.prototype.zero = function() { this.x=0;this.y=0; return this; };
+Vec2.prototype.copy = function() { return new Vec2(this.x,this.y); };
+
 
 
 var CMap = CMap || {};
