@@ -98,6 +98,10 @@ CMap.faceIsNonSimple = function(face,links,nodes){
 		if( Math.abs(angle-(face.links.length-2)*Math.PI) > 0.1 )
 			return true;
 	}
+	if( face.links.length == 3 )
+	{
+		return false;
+	}
 	
 	var eventQueue = [];
 	face.links.forEach(function(l){
