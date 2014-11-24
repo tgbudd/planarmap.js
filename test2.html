@@ -92,7 +92,8 @@ var facePolygons = facegroup.selectAll("polygon")
 	.attr("stroke","")
 	.on("mouseover",function(d,i) { d3.select(this).style("fill-opacity",1);})
 	.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill-opacity",0);})
-	.on("mousemove",polygonMouseMove);
+	.on("mousemove",polygonMouseMove)
+	.on("click",polygonClick);
 
 var corners = [];
 var cornergroup = svg.append("g").attr("class","cornergroup");
@@ -132,6 +133,38 @@ var nodeLabels = nodeGroups.append("text")
 	.style("text-anchor","start")
 	.text(function(d,i) {return i;});
 
+function updateNodes()
+{
+	linkgroup.selectAll("line.link")
+		.data(function(d) { return d.links;	})
+		.enter().append("line")
+		.attr("class","link");
+	
+	nodeGroups = svg.selectAll("circle.node")
+	   	.data(nodes)
+	   	.enter()
+	   	.append("g");
+	   	
+	nodeCircles = nodeGroups.append("circle")
+	   	.attr("class","node")
+	   	.attr("r", "7px")
+	   	.attr("fill", "blue")
+	 	.call(drag);
+	 	
+	nodeLabels = nodeGroups.append("text")
+		.attr("dx",9)
+		.attr("class","label")
+		.style("text-anchor","start")
+		.text(function(d,i) {return i;});
+		
+	nodeGroups = svg.selectAll("circle.node");
+	nodeCircles = nodeGroups.select("circle");
+	nodeLabels = nodeGroups.select("text");	   
+}
+function updateLinks()
+{
+	
+}
 
 /*   	
 var forceLines = svg.selectAll("line.forcevec")
@@ -199,7 +232,8 @@ function polygonMouseMove(d,i)
 		//removeCorners();
 		if( corners.length == 0 )
 		{
-			corners[0] = { c: nodes[minnode], r: 0.4, prev: nodes[prevnode], next: nodes[nextnode] };
+			corners[0] = { c: nodes[minnode], r: 0.4, prev: nodes[prevnode], next: nodes[nextnode], 
+				face: d, faceindex: mincorner, nodeindex: minnode };
 			cornerPolygon = cornerPolygon.data(corners);
 			cornerPolygon.enter()
 				.append("polygon")
@@ -210,12 +244,41 @@ function polygonMouseMove(d,i)
 			corners[0].r = 0.4;
 			corners[0].prev = nodes[prevnode];
 			corners[0].next = nodes[nextnode];
+			corners[0].face = d;
+			corners[0].faceindex = mincorner;
+			corners[0].nodeindex = minnode;
 		}
 		cornerPolygon.attr("points",cornerPolygonPoints);
 	} else
 	{
 		removeCorners();
 	}
+}
+
+function polygonClick(d,i)
+{
+	if( corners.length == 1 )
+	{
+		insertEdge(corners[0]);
+	}
+}
+
+function insertEdge(corner)
+{
+	var nextvec = corner.next.pos.copy().subVec(corner.c.pos);
+	var prevvec = corner.prev.pos.copy().subVec(corner.c.pos);
+	var angle = nextvec.angle(prevvec);
+	if( angle <= 0.001 ) angle += 2*Math.PI;
+	
+	var newcoor = nextvec.rotate(0.5*angle).mult(0.2).addVec(corner.c.pos);
+	nodes.push({pos: newcoor});
+	links.push([corner.nodeindex,nodes.length-1]);
+	corner.face.links.splice(corner.faceindex,0,{id:links.length-1,ccw:true},{id:links.length-1,ccw:false});
+	updateNodes();
+	updateLinks();
+	console.assert(!CMap.faceIsNonSimple(corner.face,links,nodes));
+	
+	removeCorners();
 }
 
 function removeCorners()

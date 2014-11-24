@@ -67,17 +67,18 @@ CMap.faceAngleSum = function(face,links,nodes){
 	}
 	face.links.forEach(function(l){
 		var curVec = nodes[links[l.id][1]].pos.copy().subVec(nodes[links[l.id][0]].pos);
+		if( !l.ccw )
+		{
+			curVec.mult(-1);
+		}
 		if( l.id == lastLink.id )
 		{
 			totAngle += 2*Math.PI;
 		}else
 		{
-			if( !l.ccw )
-			{
-				curVec.mult(-1);
-			}
 			totAngle += Math.PI - lastVec.angle(curVec);		
 		}
+
 		lastVec = curVec;
 		lastLink = l;
 	});
