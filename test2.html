@@ -117,10 +117,11 @@ var drag = d3.behavior.drag()
 	.on("dragstart", dragstart)
 	.on("dragend", dragend);
 	
-var nodeGroups = svg.selectAll("circle.node")
+var nodeGroups = svg.selectAll("g.node")
    	.data(nodes)
    	.enter()
-   	.append("g");
+   	.append("g")
+   	.attr("class","node");
    	
 var nodeCircles = nodeGroups.append("circle")
    	.attr("class","node")
@@ -135,15 +136,28 @@ var nodeLabels = nodeGroups.append("text")
 
 function updateNodes()
 {
-	linkgroup.selectAll("line.link")
-		.data(function(d) { return d.links;	})
-		.enter().append("line")
-		.attr("class","link");
+	linkgroup = svg.selectAll("g.face")
+		.data(faces);
 	
-	nodeGroups = svg.selectAll("circle.node")
-	   	.data(nodes)
+	linkgroup
+		.enter()
+		.append("g")
+		.attr("class","face");
+	
+	linkLines = linkgroup.selectAll("line.link")
+		.data(function(d) { return d.links;	});
+		
+	linkLines
+		.enter().append("line")
+		.attr("class","link");  
+	
+	nodeGroups = svg.selectAll("g.node")
+	   	.data(nodes);
+	   	
+	nodeGroups
 	   	.enter()
-	   	.append("g");
+	   	.append("g")   	
+	   	.attr("class","node");
 	   	
 	nodeCircles = nodeGroups.append("circle")
 	   	.attr("class","node")
@@ -157,9 +171,10 @@ function updateNodes()
 		.style("text-anchor","start")
 		.text(function(d,i) {return i;});
 		
-	nodeGroups = svg.selectAll("circle.node");
 	nodeCircles = nodeGroups.select("circle");
-	nodeLabels = nodeGroups.select("text");	   
+	nodeLabels = nodeGroups.select("text");	
+	
+ 
 }
 function updateLinks()
 {
@@ -279,6 +294,7 @@ function insertEdge(corner)
 	console.assert(!CMap.faceIsNonSimple(corner.face,links,nodes));
 	
 	removeCorners();
+	force.resume();
 }
 
 function removeCorners()
