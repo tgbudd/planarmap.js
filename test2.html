@@ -62,7 +62,7 @@ var scale = 60;
 var offset = {x: 500, y: 250};
 function toScreenCoor(d)
 {
-	return {x:scale*d.x + offset.x,y:-scale*d.y + offset.y};
+	return new Vec2(scale*d.x + offset.x,-scale*d.y + offset.y);
 }
 function fromScreenCoor(c)
 {
@@ -181,39 +181,30 @@ function updateLinks()
 	
 }
 
-/*   	
-var forceLines = svg.selectAll("line.forcevec")
-	.data(nodes)
-	.enter()
-	.append("line")
-	.attr("class","forcevec");
-*/
-
 function dragstart(d)
 {
 	force.dragforce().drag = true;
 	force.dragforce().node = d;
-//	console.log(d3.event);
 
-	//var x = new Vec2(d3.mouse(this)[0],d3.mouse(this)[1]);
-	force.dragforce().cursor = fromScreenCoor(d3.event.sourceEvent);
+	var p = d3.mouse(svg.node());
+	force.dragforce().cursor = fromScreenCoor({x:p[0],y:p[1]});
 	force.resume();
 }
 function dragmove(d)
 {
-	//var x = new Vec2(d3.mouse(this)[0],d3.mouse(this)[1]);
-	//force.dragforce().cursor = fromScreenCoor(x);
-	force.dragforce().cursor = fromScreenCoor(d3.event.sourceEvent);
+	var p = d3.mouse(svg.node());
+	force.dragforce().cursor = fromScreenCoor({x:p[0],y:p[1]});
 	force.resume();
 }
 function dragend(d)
 {
 	force.dragforce().drag = false;
 }
+
 function polygonMouseMove(d,i)
 {
-	
-	var mouse = fromScreenCoor({x: d3.mouse(this)[0],y: d3.mouse(this)[1]});
+	var p = d3.mouse(svg.node());
+	var mouse = fromScreenCoor({x:p[0],y:p[1]});
 	var mindistSq = 1000;
 	var minnode = 0;
 	var mincorner = 0;

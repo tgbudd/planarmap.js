@@ -305,7 +305,6 @@ CMap.force = function (){
     	
     	if( dragforce.drag )
     	{
-    		//console.log(dragforce);
     		dragforce.node.force.addVec( dragforce.cursor.copy().subVec(dragforce.node.pos).mult(dragforce.coupling));
     	}
     	if( centerPull.pull )
@@ -318,12 +317,10 @@ CMap.force = function (){
     	var stepsize = 0.004;
     	
     	var energy = force.energy();
-    	//console.log(energy);
     	var gradSq = 0;
 		nodes.forEach(function(n){gradSq += n.force.normSq();});
 		if( gradSq / nodes.length < 0.002 )
 		{
-			console.log("stop");
 			force.stop();
 		} else
 		{
