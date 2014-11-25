@@ -88,7 +88,6 @@ CMap.faceAngleSum = function(face,links,nodes){
 CMap.faceIsNonSimple = function(face,links,nodes){
 
 	var angle = CMap.faceAngleSum(face,links,nodes);
-	//console.log(angle,(face.links.length-2));
 	if( face.outer )
 	{
 		if( Math.abs(angle-(face.links.length+2)*Math.PI) > 0.1 )
@@ -104,20 +103,26 @@ CMap.faceIsNonSimple = function(face,links,nodes){
 	}
 	
 	var eventQueue = [];
+	var uniquelinks = {};
 	face.links.forEach(function(l){
-		eventQueue.push({p: nodes[links[l.id][0]].pos, p2: nodes[links[l.id][1]].pos, link: l, 
-			left: nodes[links[l.id][0]].pos.x <= nodes[links[l.id][1]].pos.x});
-		eventQueue.push({p: nodes[links[l.id][1]].pos, p2: nodes[links[l.id][0]].pos, link: l,
-			left: !(nodes[links[l.id][0]].pos.x <= nodes[links[l.id][1]].pos.x)});
+		if( !uniquelinks[l.id] )
+		{
+			uniquelinks[l.id] = true;
+			eventQueue.push({p: nodes[links[l.id][0]].pos, p2: nodes[links[l.id][1]].pos, link: l, 
+				left: nodes[links[l.id][0]].pos.x <= nodes[links[l.id][1]].pos.x});
+			eventQueue.push({p: nodes[links[l.id][1]].pos, p2: nodes[links[l.id][0]].pos, link: l,
+				left: !(nodes[links[l.id][0]].pos.x <= nodes[links[l.id][1]].pos.x)});
+		}
 	});
-	eventQueue.sort(function(a,b){ return (a.p.x==b.p.x? a.p.y-b.p.y : a.p.x-b.p.x); });
+	eventQueue.sort(function(a,b){ return (a.p==b.p? a.p2.x-b.p2.x : a.p.x-b.p.x); });
 	
 	var sweepLine = [];
 	return eventQueue.some(function(e){
 		if( e.left )
 		{
 			var position = 0;
-			if( sweepLine.some(function(s,i){ position=i; return s.p.y >= e.p.y; }) ) {
+			if( sweepLine.some(function(s,i){ position=i; return (s.p == e.p ? 
+					(s.p2.y - s.p.y)*(e.p2.x-e.p.x) >= (e.p2.y - e.p.y)*(s.p2.x-s.p.x) : s.p.y >= e.p.y); }) ) {
 				sweepLine.splice(position,0,e);
 			} else
 			{
