@@ -17,16 +17,37 @@ svg polygon.corner {
 svg text.label {
 	pointer-events: none;
 }
+#controls label {
+	display: inline-block;
+	width: 120px;
+	text-align: right;
+}
 </style>
 </head>
 <body>
 <div id="pmap">
 </div>
+<div id="controls">
+<p>
+	<label for="springCoupling">Spring coupling</label>
+	<input type="range" min="0.2" max="8" id="springCoupling" value="1" step="0.2" />
+	<span id="springCouplingValue">1</span>
+</p>
+<p>
+	<label for="springLength">Spring length</label>
+	<input type="range" min="0.4" max="3" id="springLength" value="1" step="0.2" />
+	<span id="springLengthValue">1</span>
+</p>
+<p>
+	<label for="repulsionPower">Repulsion power</label>
+	<input type="range" min="0.4" max="2" id="repulsionPower" value="1" step="0.1" />
+	<span id="repulsionPowerValue">1</span>
+</p>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.1/d3.min.js"></script>
 <script src="force.js"></script>
 <script>
-var svg = d3.select("#pmap").append("svg")
-	.attr("width",1000).attr("height",500);
+
 
 var nodes = [{x: 1., y: 0.}, {x: 0.309017, y: 0.951057}, {x: -0.809017, y: 0.587785}, 
 			 {x: -0.809017, y: -0.587785}, {x: 0.309017, y: -0.951057}, {x: 0.4, y: 0.2}, 
@@ -69,6 +90,9 @@ function fromScreenCoor(c)
 	return new Vec2((c.x-offset.x)/scale,(-c.y+offset.y)/scale);
 }
 
+var svg = d3.select("#pmap").append("svg")
+	.attr("width",1000).attr("height",500);
+
 
 var force = CMap.force().nodes(nodes)
 	.faces(faces)
@@ -80,6 +104,27 @@ var force = CMap.force().nodes(nodes)
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.4})
 	.on("tick",updateMap);
 
+d3.select("#springCoupling").on("input",function(){updateSpringCoupling(+this.value);});
+function updateSpringCoupling(x) {
+	force.springCoupling(x);
+	d3.select("#springCoupling").property("value",x);
+	d3.select("#springCouplingValue").text(x);
+	force.resume();	
+}	
+d3.select("#springLength").on("input",function(){updateSpringLength(+this.value);});
+function updateSpringLength(x) {
+	force.springLength(x);
+	d3.select("#springLength").property("value",x);
+	d3.select("#springLengthValue").text(x);
+	force.resume();		
+}	
+d3.select("#repulsionPower").on("input",function(){updateRepulsionPower(+this.value);});
+function updateRepulsionPower(x) {
+	force.repulsionPower(x);
+	d3.select("#repulsionPower").property("value",x);
+	d3.select("#repulsionPowerValue").text(x);	
+	force.resume();	
+}		
 
 
 var facegroup = svg.append("g").attr("class","facegroup");
@@ -355,7 +400,9 @@ function updateMap()
 	});*/
 }
 
-force.start();
+updateSpringCoupling(1);
+updateSpringLength(1);
+updateRepulsionPower(1);
 
 </script>
 </body>

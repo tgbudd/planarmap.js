@@ -396,39 +396,6 @@ CMap.force = function (){
     	return force;
   	};
   	
-  	/*force.drag = function() {
-  		console.log(arguments);
-		if (!drag) drag = d3.behavior.drag()
-		    .origin(function(x){return x;})
-		    .on("dragstart", dragstart)
-		    .on("drag", dragmove)
-		    .on("dragend", dragend);
-
-		if (!arguments.length) return drag;
-
-    //this.on("mouseover.force", d3_layout_forceMouseover)
-    //    .on("mouseout.force", d3_layout_forceMouseout)
-    //    .call(drag);
-  	};
-
-	function dragstart(d) {
-		console.log("start",d);
-		dragforce.drag = true;
-		dragforce.cursor = fromScreenCoor(d3.event);
-		dragforce.node = d;
-		force.resume(); // restart annealing
-	}
-	function dragmove(d) {
-		console.log("dragmove",d);
-		dragforce.drag = true;
-		dragforce.cursor = fromScreenCoor(d3.event);
-		dragforce.node = d;
-		force.resume(); // restart annealing
-	}
-	function dragend(d) {
-		dragforce.drag = false;
-	}
-	*/
 	return d3.rebind(force,event,"on");
 };
 
