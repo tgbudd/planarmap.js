@@ -79,6 +79,8 @@ var faces = [{links: [{id:0,ccw:true}, {id:1,ccw:true}, {id:2,ccw:true}, {id:3,c
 			  outer: true,
 			  color: "#f0f0ff"}];
 
+var corners = [];
+
 var scale = 60;
 var offset = {x: 500, y: 250};
 function toScreenCoor(d)
@@ -127,104 +129,89 @@ function updateRepulsionPower(x) {
 }		
 
 
-var facegroup = svg.append("g").attr("class","facegroup");
+var faceLayer = svg.append("g").attr("class","faceLayer");
 
-var facePolygons = facegroup.selectAll("polygon")
-	.data(faces.filter(function(f) { return !f.outer; }))
-	.enter().append("polygon")
-	.attr("fill",function(d){return d.color;} )
-	.attr("fill-opacity",0)
-	.attr("stroke","")
-	.on("mouseover",function(d,i) { d3.select(this).style("fill-opacity",1);})
-	.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill-opacity",0);})
-	.on("mousemove",polygonMouseMove)
-	.on("click",polygonClick);
+var cornerLayer = svg.append("g").attr("class","cornerLayer");
 
-var corners = [];
-var cornergroup = svg.append("g").attr("class","cornergroup");
-var cornerPolygon = cornergroup.selectAll("polygon.corner")
-	.data(corners);
+var linkLayer = svg.append("g").attr("class","linkLayer");
 
-var linkgroup = svg.selectAll("g.face")
-	.data(faces)
-	.enter()
-	.append("g")
-	.attr("class","face");
-
-var linkLines = linkgroup.selectAll("line.link")
-	.data(function(d) { return d.links;	})
-	.enter().append("line")
-	.attr("class","link");
+var nodeLayer = svg.append("g").attr("class","nodeLayer");
 
 var drag = d3.behavior.drag()
 	.origin(function(d){return d;})
 	.on("drag", dragmove)
 	.on("dragstart", dragstart)
 	.on("dragend", dragend);
-	
-var nodeGroups = svg.selectAll("g.node")
-   	.data(nodes)
-   	.enter()
-   	.append("g")
-   	.attr("class","node");
-   	
-var nodeCircles = nodeGroups.append("circle")
-   	.attr("class","node")
-   	.attr("r", "7px")
-   	.attr("fill", "blue")
- 	.call(drag);
-var nodeLabels = nodeGroups.append("text")
-	.attr("dx",9)
-	.attr("class","label")
-	.style("text-anchor","start")
-	.text(function(d,i) {return i;});
 
-function updateNodes()
+function updateFaceLayer()
 {
-	linkgroup = svg.selectAll("g.face")
-		.data(faces);
+	var facePolygons = faceLayer.selectAll("polygon")
+		.data(faces.filter(function(f) { return !f.outer; }));
 	
-	linkgroup
-		.enter()
-		.append("g")
-		.attr("class","face");
-	
-	linkLines = linkgroup.selectAll("line.link")
-		.data(function(d) { return d.links;	});
+	facePolygons.enter().append("polygon")
+		.attr("fill",function(d){return d.color;} )
+		.attr("fill-opacity",0)
+		.attr("stroke","")
+		.on("mouseover",function(d,i) { d3.select(this).style("fill-opacity",1);})
+		.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill-opacity",0);})
+		.on("mousemove",polygonMouseMove)
+		.on("mousedown",polygonMouseDown)
+		.on("mouseup",polygonMouseUp);
 		
-	linkLines
-		.enter().append("line")
-		.attr("class","link");  
+	facePolygons.exit().remove();
+}
+
+function updateCornerLayer()
+{
+	var cornerPolygons = cornerLayer.selectAll("polygon")
+		.data(corners);
 	
-	nodeGroups = svg.selectAll("g.node")
-	   	.data(nodes);
-	   	
-	nodeGroups
-	   	.enter()
-	   	.append("g")   	
-	   	.attr("class","node");
-	   	
-	nodeCircles = nodeGroups.append("circle")
+	cornerPolygons.enter()
+		.append("polygon")
+		.attr("class","corner")
+		.attr("points",cornerPolygonPoints);
+		
+	cornerPolygons.exit().remove();
+}
+
+function updateLinkLayer()
+{
+	var linkLines = linkLayer.selectAll("line")
+		.data(links);
+		
+	linkLines.enter().append("line")
+		.attr("class","link");
+	
+	linkLines.exit().remove();
+}
+
+function updateNodeLayer()
+{
+	var nodeGroups = nodeLayer.selectAll("g.node")
+		.data(nodes);
+		
+	var newNodeGroups = nodeGroups.enter().append("g")
+		.attr("class","node");
+		
+	newNodeGroups.append("circle")
 	   	.attr("class","node")
 	   	.attr("r", "7px")
 	   	.attr("fill", "blue")
-	 	.call(drag);
-	 	
-	nodeLabels = nodeGroups.append("text")
+	 	.call(drag);		
+
+	newNodeGroups.append("text")
 		.attr("dx",9)
 		.attr("class","label")
 		.style("text-anchor","start")
 		.text(function(d,i) {return i;});
 		
-	nodeCircles = nodeGroups.select("circle");
-	nodeLabels = nodeGroups.select("text");	
-	
- 
+	nodeGroups.exit().remove();
 }
-function updateLinks()
-{
-	
-}
+
+updateFaceLayer();
+updateCornerLayer();
+updateLinkLayer();
+updateNodeLayer();
 
 function dragstart(d)
 {
@@ -280,15 +267,11 @@ function polygonMouseMove(d,i)
 		var prevlink = d.links[(mincorner+d.links.length-1)%d.links.length];
 		var prevnode = links[prevlink.id][prevlink.ccw?0:1];
 		var nextnode = links[d.links[mincorner].id][d.links[mincorner].ccw?1:0];
-		//removeCorners();
+
 		if( corners.length == 0 )
 		{
 			corners[0] = { c: nodes[minnode], r: 0.4, prev: nodes[prevnode], next: nodes[nextnode], 
 				face: d, faceindex: mincorner, nodeindex: minnode };
-			cornerPolygon = cornerPolygon.data(corners);
-			cornerPolygon.enter()
-				.append("polygon")
-				.attr("class","corner");
 		} else
 		{
 			corners[0].c = nodes[minnode];
@@ -299,7 +282,7 @@ function polygonMouseMove(d,i)
 			corners[0].faceindex = mincorner;
 			corners[0].nodeindex = minnode;
 		}
-		cornerPolygon.attr("points",cornerPolygonPoints);
+		updateCornerLayer();
 	} else
 	{
 		removeCorners();
@@ -314,6 +297,39 @@ function polygonClick(d,i)
 	}
 }
 
+var segmentStartCorner = {};
+
+function polygonMouseDown(d,i)
+{
+	if( corners.length == 1 )
+	{
+		segmentStartCorner.c = corners[0].c;
+		segmentStartCorner.face = corners[0].face;		
+		segmentStartCorner.faceindex = corners[0].faceindex;
+		segmentStartCorner.nodeindex = corners[0].nodeindex;		
+	} else
+	{
+		segmentStartCorner = {};
+	}
+}
+
+function polygonMouseUp(d,i)
+{
+	if( corners.length == 1 && segmentStartCorner.face && segmentStartCorner.face == corners[0].face )
+	{
+		if( segmentStartCorner.nodeindex != corners[0].nodeindex)
+		{
+			splitFace([segmentStartCorner,corners[0]]);	
+		} else
+		{
+			insertEdge(corners[0]);
+		}
+	} else
+	{
+		segmentStartCorner = {};
+	}
+}
+
 function insertEdge(corner)
 {
 	var nextvec = corner.next.pos.copy().subVec(corner.c.pos);
@@ -325,11 +341,27 @@ function insertEdge(corner)
 	nodes.push({pos: newcoor});
 	links.push([corner.nodeindex,nodes.length-1]);
 	corner.face.links.splice(corner.faceindex,0,{id:links.length-1,ccw:true},{id:links.length-1,ccw:false});
-	updateNodes();
-	updateLinks();
-	console.assert(!CMap.faceIsNonSimple(corner.face,links,nodes));
+	updateFaceLayer()
+	updateLinkLayer();
+	updateNodeLayer();
 	
 	removeCorners();
+	force.resume();
+}
+
+function splitFace(corners)
+{
+	var c = ( corners[0].faceindex < corners[1].faceindex ? [ corners[0], corners[1] ] : [ corners[1], corners[0] ] );
+
+	links.push([c[0].nodeindex,c[1].nodeindex]);
+	faces.push({links: 
+		c[0].face.links.splice(c[0].faceindex,c[1].faceindex-c[0].faceindex,
+			{id: links.length-1, ccw: true}),
+		outer: false,
+		color: c[0].face.color});
+	faces[faces.length-1].links.push({id: links.length-1, ccw: false});
+	updateFaceLayer();
+	updateLinkLayer();
 	force.resume();
 }
 
@@ -338,8 +370,8 @@ function removeCorners()
 	while(corners.length > 0) {
 		corners.pop();
 	}
-	cornerPolygon = cornerPolygon.data(corners);
-	cornerPolygon.exit().remove();
+	updateCornerLayer();
+
 }
 
 function cornerPolygonPoints(corner)
@@ -361,43 +393,29 @@ function cornerPolygonPoints(corner)
 
 function updateMap()
 {
-//	nodeCircles
-//   	.attr("cx", function(d) { return toScreenCoor(d.pos).x; })
-//   	.attr("cy", function(d) { return toScreenCoor(d.pos).y; });
-	nodeGroups.attr("transform", function(d){
+	nodeLayer.selectAll("g.node").attr("transform", function(d){
 		return "translate(" + [toScreenCoor(d.pos).x,toScreenCoor(d.pos).y] + ")";
    	});
 
 
-	linkLines
-	.attr("x1", function(d) { return toScreenCoor(nodes[links[d.id][0]].pos).x; })
-	.attr("y1", function(d) { return toScreenCoor(nodes[links[d.id][0]].pos).y; })
-	.attr("x2", function(d) { return toScreenCoor(nodes[links[d.id][1]].pos).x; })
-	.attr("y2", function(d) { return toScreenCoor(nodes[links[d.id][1]].pos).y; });
+	linkLayer.selectAll("line")
+		.attr("x1", function(d) { return toScreenCoor(nodes[d[0]].pos).x; })
+		.attr("y1", function(d) { return toScreenCoor(nodes[d[0]].pos).y; })
+		.attr("x2", function(d) { return toScreenCoor(nodes[d[1]].pos).x; })
+		.attr("y2", function(d) { return toScreenCoor(nodes[d[1]].pos).y; });
 	
-
-	cornerPolygon
+	cornerLayer.selectAll("polygon")
 		.attr("points",cornerPolygonPoints);
 	
-	/*
-	forceLines
-	.attr("x1", function(d) { return toScreenCoor(d.pos).x; })
-	.attr("y1", function(d) { return toScreenCoor(d.pos).y; })
-	.attr("x2", function(d) { return toScreenCoor(d.pos.copy().addVec(d.force.copy().mult(0.02))).x; })
-	.attr("y2", function(d) { return toScreenCoor(d.pos.copy().addVec(d.force.copy().mult(0.02))).y; });
-	*/
-	
-	facePolygons.attr("points",function(d) {
+
+	faceLayer.selectAll("polygon")
+		.attr("points",function(d) {
 		return d.links.map(function(p) { 
 			var coor = toScreenCoor(nodes[links[p.id][(p.ccw?0:1)]].pos);
 			return [coor.x,coor.y].join(","); 
 		}).join(" ");
 	});
-	
-	
-	/*facePolygons.attr("fill",function(d) {
-		return (CMap.faceIsNonSimple(d,links,nodes) ? "red" : "#ccffcc");
-	});*/
+
 }
 
 updateSpringCoupling(1);
