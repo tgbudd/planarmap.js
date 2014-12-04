@@ -127,7 +127,8 @@ var force = CMap.force().nodes(nodes)
 					  maxX: fromScreenCoor({x:svg.attr("width"),y:0}).x,
 					  maxY: fromScreenCoor({x:svg.attr("width"),y:0}).y})
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.4})
-	.on("tick",updateMap);
+	.on("tick",updateMap)
+	.on("end",updateMap);
 
 d3.select("#springCoupling").on("input",function(){updateSpringCoupling(+this.value);});
 function updateSpringCoupling(x) {
@@ -346,6 +347,7 @@ function polygonMouseMove(d,i)
 			corners[0].nodeindex = minnode;
 		}
 		updateCornerLayer();
+		force.resume();
 	} else
 	{
 		removeCorners();

@@ -156,7 +156,6 @@ CMap.force = function (){
 	var nodes = [];
 	var faces = [];
 	var links = [];
-	var alpha = 0;
 	var repulsionPower = 1.0;
 	var springLength = 1.0;
 	var springCoupling = 2.0;
@@ -258,7 +257,7 @@ CMap.force = function (){
 	force.tick = function() {
 		if( !running )
 		{
-			return;
+			return true;
 		}
     	nodes.forEach(function(n){ 
     		if( n.force ) { 
@@ -323,10 +322,17 @@ CMap.force = function (){
     	
     	var energy = force.energy();
     	var gradSq = 0;
-		nodes.forEach(function(n){gradSq += n.force.normSq();});
+    	var maxForce = 0;
+		nodes.forEach(function(n){gradSq += n.force.normSq();maxForce=Math.max(maxForce,n.force.normSq());});
+		maxForce = Math.sqrt(maxForce);
+		if( maxForce > 0 )
+		{
+			stepsize = Math.min(stepsize,0.1/maxForce);
+		}
 		if( gradSq / nodes.length < 0.002 )
 		{
 			force.stop();
+			return true;
 		} else
 		{
 		
@@ -371,9 +377,10 @@ CMap.force = function (){
 					}
 				}
 			}
-			//console.log(50-maxsteps,gradSq);
 		}
-    	event.tick({type: "tick", alpha: alpha});
+    	event.tick({type: "tick"});
+    	
+    	return false;
   	};
   	
     force.start = function() {
@@ -392,6 +399,10 @@ CMap.force = function (){
   	};
 
   	force.stop = function() {
+  		if( running )
+  		{
+  			event.end({type: "end"});
+  		}
   		running = false;
     	return force;
   	};
