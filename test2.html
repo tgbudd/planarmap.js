@@ -11,8 +11,8 @@ svg {
 	border: 1px solid black;
 }
 svg polygon.corner {
-	fill: #ddaa40;
 	pointer-events: none;
+	fill: #dd5020;
 }
 svg text.label {
 	pointer-events: none;
@@ -34,7 +34,7 @@ svg circle.node {
 }
 #controls label {
 	display: inline-block;
-	width: 120px;
+	width: 140px;
 	text-align: right;
 }
 </style>
@@ -45,28 +45,27 @@ svg circle.node {
 <div id="controls">
 <p>
 	<label for="springCoupling">Spring coupling</label>
-	<input type="range" min="0.2" max="8" id="springCoupling" value="1" step="0.2" />
+	<input type="range" min="0.2" max="10" id="springCoupling" value="1" step="0.2" />
 	<span id="springCouplingValue">1</span>
 </p>
 <p>
 	<label for="springLength">Spring length</label>
-	<input type="range" min="0.4" max="3" id="springLength" value="1" step="0.2" />
+	<input type="range" min="0.2" max="2.5" id="springLength" value="1" step="0.1" />
 	<span id="springLengthValue">1</span>
 </p>
 <p>
 	<label for="repulsionPower">Repulsion power</label>
-	<input type="range" min="0.4" max="2" id="repulsionPower" value="1" step="0.1" />
+	<input type="range" min="0.1" max="3" id="repulsionPower" value="1" step="0.1" />
 	<span id="repulsionPowerValue">1</span>
 </p>
 <p>
-	<input id="savePNG" type="button" value="Save as PNG" />
+	<label for="centerPullCoupling">Center pull coupling</label>
+	<input type="range" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
+	<span id="centerPullCouplingValue">1</span>
 </p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.1/d3.min.js"></script>
 <script src="force.js"></script>
-<script src="external/rgbcolor.js"></script>
-<script src="external/canvg.js"></script>
-<script src="external/svgenie.js"></script>
 <script>
 
 
@@ -99,6 +98,7 @@ var faces = [{links: [{id:0,ccw:true}, {id:1,ccw:true}, {id:2,ccw:true}, {id:3,c
 			 		  {id:3,ccw:false},{id:2,ccw:false}],
 			  outer: true,
 			  color: "#f0f0ff"}];
+var externalface = faces[5];
 
 var helplines = [];
 var corners = [];
@@ -107,16 +107,20 @@ var scale = 60;
 var offset = {x: 500, y: 250};
 function toScreenCoor(d)
 {
+	//return new Vec2(d.x,d.y);
 	return new Vec2(scale*d.x + offset.x,-scale*d.y + offset.y);
 }
 function fromScreenCoor(c)
 {
+	//return new Vec2(c.x,c.y);
 	return new Vec2((c.x-offset.x)/scale,(-c.y+offset.y)/scale);
 }
 
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
-	.attr("width",1000).attr("height",500);
+	.attr("width",1000).attr("height",500)
+	//.attr("viewBox","-15 -15 15 15")
+	//.attr("preserveAspectRatio", "xMidYMid meet");
 
 
 var force = CMap.force().nodes(nodes)
@@ -150,8 +154,24 @@ function updateRepulsionPower(x) {
 	d3.select("#repulsionPower").property("value",x);
 	d3.select("#repulsionPowerValue").text(x);	
 	force.resume();	
-}		
+}
+d3.select("#centerPullCoupling").on("input",function(){updateCenterPullCoupling(+this.value);});
+function updateCenterPullCoupling(x) {
+	force.centerPull().coupling = x;
+	d3.select("#centerPullCoupling").property("value",x);
+	d3.select("#centerPullCouplingValue").text(x);	
+	force.resume();	
+}			
 
+var backgroundLayer = svg.append("g").attr("class","backgroundLayer");
+var backgroundRect = backgroundLayer.append("rect")
+	.attr("fill","white")
+	.attr("width","100%").attr("height","100%").attr("x",0).attr("y",0)
+	.on("mouseover",function() { if(!force.dragforce().drag) {d3.select(this).style("fill",externalface.color);}})
+	.on("mouseout",function() { removeHelpLines(); removeCorners(); segmentStartCorner = {}; d3.select(this).style("fill","white");})
+	.on("mousemove",function(){ polygonMouseMove(externalface);} )
+	.on("mousedown",function(){ polygonMouseDown(externalface);} )
+	.on("mouseup",function(){ polygonMouseUp(externalface);} );
 
 var faceLayer = svg.append("g").attr("class","faceLayer");
 
@@ -177,11 +197,10 @@ function updateFaceLayer()
 		.data(faces.filter(function(f) { return !f.outer; }));
 	
 	facePolygons.enter().append("polygon")
-		.attr("fill",function(d){return d.color;} )
-		.attr("fill-opacity",0)
+		.attr("fill","white" )
 		.attr("stroke","")
-		.on("mouseover",function(d,i) { if(!force.dragforce().drag) {d3.select(this).style("fill-opacity",1);}})
-		.on("mouseout",function(d,i) { removeHelpLines(); removeCorners(); segmentStartCorner = {}; d3.select(this).style("fill-opacity",0);})
+		.on("mouseover",function(d,i) { if(!force.dragforce().drag) {d3.select(this).style("fill",d.color);}})
+		.on("mouseout",function(d,i) { removeHelpLines(); removeCorners(); segmentStartCorner = {}; d3.select(this).style("fill","white");})
 		.on("mousemove",polygonMouseMove)
 		.on("mousedown",polygonMouseDown)
 		.on("mouseup",polygonMouseUp);
@@ -234,7 +253,8 @@ function updateNodeLayer()
 		
 	newNodeGroups.append("circle")
 	   	.attr("class","node")
-	   	.attr("r", "7px")
+	   	.attr("r","7")
+	   	//.attr("r", "0.01")//"7px")
 	   	.attr("fill", "blue")
 	 	.call(drag);		
 
@@ -272,7 +292,7 @@ function dragend(d)
 	force.dragforce().drag = false;
 }
 
-function polygonMouseMove(d,i)
+function polygonMouseMove(d)
 {
 	d3.event.preventDefault();
 
@@ -365,7 +385,7 @@ function polygonClick(d,i)
 */
 
 
-function polygonMouseDown(d,i)
+function polygonMouseDown(d)
 {
 	d3.event.preventDefault();
 	if( corners.length == 1 )
@@ -380,7 +400,7 @@ function polygonMouseDown(d,i)
 	}
 }
 
-function polygonMouseUp(d,i)
+function polygonMouseUp(d)
 {
 	if( corners.length == 1 && segmentStartCorner.face && segmentStartCorner.face == corners[0].face )
 	{
@@ -426,6 +446,19 @@ function splitFace(corners)
 		outer: false,
 		color: c[0].face.color});
 	faces[faces.length-1].links.push({id: links.length-1, ccw: false});
+	
+	if( c[0].face.outer )
+	{
+		var angle = CMap.faceAngleSum(c[0].face,links,nodes);
+		if( Math.abs(angle-(c[0].face.links.length-2)*Math.PI) < 0.1 )
+		{
+			// the previously outer face is not the outer face anymore
+			c[0].face.outer = false;
+			faces[faces.length-1].outer = true;
+			externalface = faces[faces.length-1];
+		}
+	}
+		
 	updateFaceLayer();
 	updateLinkLayer();
 	force.resume();

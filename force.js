@@ -229,16 +229,16 @@ CMap.force = function (){
     					var p = nodes[nodeId].pos, 
     						q1 = nodes[ links[link.id][0] ].pos, 
     						q2 = nodes[ links[link.id][1] ].pos;
-    					energy += Math.pow( p.copy().subVec(q1).norm() 
+    					energy += Math.pow( (p.copy().subVec(q1).norm() 
     								+ p.copy().subVec(q2).norm()
-    								- q1.copy().subVec(q2).norm(), -repulsionPower);
+    								- q1.copy().subVec(q2).norm())/springLength, -repulsionPower);
     				}
     			});
     		});   	
     	});
      	links.forEach(function(l){
     		var len = nodes[l[0]].pos.copy().subVec(nodes[l[1]].pos).norm();
-    		energy += 0.5*springCoupling*(len - springLength)*(len - springLength);
+    		energy += 0.5*springCoupling*(len - springLength)*(len - springLength)/springLength;
     	});
     	
     	if( dragforce.drag )
@@ -279,9 +279,9 @@ CMap.force = function (){
     						q1 = nodes[ links[link.id][0] ].pos, 
     						q2 = nodes[ links[link.id][1] ].pos;
     					var scale = repulsionPower * 
-    						Math.pow( p.copy().subVec(q1).norm() 
+    						Math.pow( (p.copy().subVec(q1).norm() 
     								+ p.copy().subVec(q2).norm()
-    								- q1.copy().subVec(q2).norm(), -repulsionPower-1);
+    								- q1.copy().subVec(q2).norm())/springLength, -repulsionPower-1)/springLength;
     					var q1top = p.copy().subVec(q1).normalize();
     					var q2top = p.copy().subVec(q2).normalize();
     					var q1toq2 = q2.copy().subVec(q1).normalize();
@@ -302,7 +302,7 @@ CMap.force = function (){
     	links.forEach(function(l){
     		var diff = nodes[l[0]].pos.copy().subVec(nodes[l[1]].pos);
     		var len = diff.norm();
-    		var f = diff.mult(springCoupling*(len - springLength)/len);
+    		var f = diff.mult(springCoupling*(len - springLength)/len/springLength);
     		nodes[l[0]].force.subVec(f);
     		nodes[l[1]].force.addVec(f);
     	});
