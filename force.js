@@ -15,6 +15,12 @@ Vec2.prototype.angle = function(vec_) {
 	// counterclockwise direction to align it with vec_. 
 	return Math.atan2(this.cross(vec_),this.dot(vec_));
 };
+Vec2.prototype.anglePos = function(vec_) {
+	// Returns the angle (between 0 and 2 PI) this has to be rotated in
+	// counterclockwise direction to align it with vec_. 
+	var angle = this.angle(vec_);
+	return (angle < 0 ? angle + 2*Math.PI : angle);
+};
 Vec2.prototype.rotate = function(angle) { 
 	var cosine = Math.cos(angle);
 	var sine = Math.sin(angle);
@@ -28,32 +34,107 @@ Vec2.prototype.normSq = function() { return this.dot(this); };
 Vec2.prototype.normalize = function() { var n = this.norm(); return this.divide(n); };
 Vec2.prototype.zero = function() { this.x=0;this.y=0; return this; };
 Vec2.prototype.copy = function() { return new Vec2(this.x,this.y); };
-
-
+/* Returns true if the angular direction of this is in the counterclockwise order between v1 and v2 */
+Vec2.prototype.isInBetween = function(v1,v2) {
+	var angle1 = v1.anglePos(this);
+	var angle2 = v1.anglePos(v2);
+	return angle1 > 0 && angle1 < angle2;
+}
 
 var CMap = CMap || {};
 
-CMap.segmentsIntersect = function( e1, e2, links ){
-	if( links[e1.link.id][0] == links[e2.link.id][0] || links[e1.link.id][0] == links[e2.link.id][1]
-		|| links[e1.link.id][1] == links[e2.link.id][0] || links[e1.link.id][1] == links[e2.link.id][1] )
+/*
+	Input:
+		line1, line2 - Arrays of two Vec2's 
+		ignoreEndPoints - if true line1 and line2 may share an end point
+	Output:
+		returns true when they intersect (in their interior)
+*/
+CMap.segmentsIntersect = function( line1, line2, ignoreEndPoints ){
+	if( arguments.length < 3 ) ignoreEndPoints = true;
+	if( !ignoreEndPoints && 
+		(line1[0] == line2[0] || line1[0] == line2[1]
+		|| line1[1] == line2[0] || line1[1] == line2[1] ) )
+	{
+		return true;
+	}
+
+	var v1 = line1[1].copy().subVec(line1[0]);
+	var v2 = line2[1].copy().subVec(line2[0]);
+	var cross = v1.cross(v2);
+	if( ignoreEndPoints && (line1[0] == line2[0] || line1[0] == line2[1]
+		|| line1[1] == line2[0] || line1[1] == line2[1]) )
+	{
+		if( cross == 0 )
+		{
+			// check whether they do not overlap
+			if( line1[0] == line2[0] || line1[1] == line2[1] )
+			{
+				return v1.dot(v2) >= 0;
+			}
+			if( line1[1] == line2[0] ||	line1[0] == line2[1] )
+			{
+				return v1.dot(v2) <= 0;
+			}
+		} else
+		{
+			return false;
+		}	
+	}
+	var d0 = line2[0].copy().subVec(line1[0]);
+	if( cross == 0 )
+	{
+		// check whether they do not overlap
+		if( d0.cross(v1) == 0 )
+		{
+			var min0 = Math.min( 0, v1.dot(v1) ),
+				max0 = Math.max( 0, v1.dot(v1) ),
+				min1 = v1.dot(d0) + Math.min( 0, v1.dot(v2) ),
+				max1 = v1.dot(d0) + Math.max( 0, v1.dot(v2) );
+			return (max1 >= max0 && min1 <= max0) || (min1 <= min0 && max1 >= min0 );
+		} else
+		{
+			return false;
+		}
+	}
+	var between01 = function(x){return 0 <= x && x <= 1;}
+	return between01(d0.cross(v2)/cross) && between01(d0.cross(v1)/cross); 
+}
+
+/*
+	input:
+		facecoor - an array of Vec2's representing the vertices
+		diagIds - an array of two indices of facecoor representing the diagonal
+	Note that equality of points is established by comparing objects,
+	so make sure not to provide copies of the same Vec2's.
+	
+	output:
+		Returns true when the diagonal divides the polygon into
+		two simple polygons.
+*/
+CMap.isProperDiagonal = function(facecoor,diagIds){
+	var next = function(i) { return (i+1)%facecoor.length; };
+	var prev = function(i) { return (i+facecoor.length-1)%facecoor.length; };
+	var line = [facecoor[diagIds[0]],facecoor[diagIds[1]]];
+
+	// Check that the directions are inward
+	if( !(facecoor[next(diagIds[0])]==facecoor[prev(diagIds[0])] || line[1].copy().subVec(line[0]).isInBetween(
+			facecoor[next(diagIds[0])].copy().subVec(line[0]),
+			facecoor[prev(diagIds[0])].copy().subVec(line[0]) ) ) || 
+		!(facecoor[next(diagIds[1])]==facecoor[prev(diagIds[1])] || line[0].copy().subVec(line[1]).isInBetween(
+			facecoor[next(diagIds[1])].copy().subVec(line[1]),
+			facecoor[prev(diagIds[1])].copy().subVec(line[1]) ) ) )
 	{
 		return false;
 	}
 	
-	var v1 = e1.p2.copy().subVec(e1.p);
-	var v2 = e2.p2.copy().subVec(e2.p);
-	var cross = v1.cross(v2);
-	if( cross == 0 )
-		return false;
-	
-	var param = e2.p.copy().subVec(e1.p).cross(v2) / cross;
-	if( param <= 0 || param >= 1 )
-		return false;
-	param = e2.p.copy().subVec(e1.p).cross(v1) / cross;
-	if( param <= 0 || param >= 1 )
-		return false;
-	return true;	 
-};
+	for(var i=0;i<facecoor.length;i++)
+	{
+		if( CMap.segmentsIntersect( [facecoor[i],facecoor[next(i)]], line) )
+			return false;
+	}
+	return true;
+}
 
 CMap.faceAngleSum = function(face,links,nodes){
 	var totAngle = 0.0;
@@ -129,9 +210,10 @@ CMap.faceIsNonSimple = function(face,links,nodes){
 				sweepLine.push(e);
 				position = sweepLine.length-1;
 			}
-			if( position > 0 && CMap.segmentsIntersect(e,sweepLine[position-1],links) )
+			if( position > 0 && CMap.segmentsIntersect([e.p,e.p2],[sweepLine[position-1].p,sweepLine[position-1].p2]) )
 				return true;
-			if( position < sweepLine.length-1 && CMap.segmentsIntersect(e,sweepLine[position+1],links) )
+			if( position < sweepLine.length-1 && CMap.segmentsIntersect([e.p,e.p2],
+								[sweepLine[position+1].p,sweepLine[position+1].p2]) )
 				return true;
 		} else
 		{
@@ -139,7 +221,8 @@ CMap.faceIsNonSimple = function(face,links,nodes){
 			sweepLine.some(function(s,i){ position=i; return s.link == e.link; });
 			sweepLine.splice(position,1);
 			if( position > 0 && position < sweepLine.length &&
-				CMap.segmentsIntersect( sweepLine[position], sweepLine[position-1], links ) )
+				CMap.segmentsIntersect( [sweepLine[position].p,sweepLine[position].p2], 
+										[sweepLine[position-1].p,sweepLine[position-1].p2] ) )
 				return true;
 		}
 	});

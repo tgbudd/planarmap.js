@@ -406,7 +406,13 @@ function polygonMouseUp(d)
 	{
 		if( segmentStartCorner.nodeindex != corners[0].nodeindex)
 		{
-			splitFace([segmentStartCorner,corners[0]]);	
+			var thisface = corners[0].face.links.map(function(l){
+				return (l.ccw? nodes[links[l.id][0]].pos : nodes[links[l.id][1]].pos );
+			});
+			if( CMap.isProperDiagonal(thisface, [segmentStartCorner.faceindex, corners[0].faceindex]) )
+			{
+				splitFace([segmentStartCorner,corners[0]]);	
+			}
 		} else
 		{
 			insertEdge(corners[0]);
@@ -540,9 +546,6 @@ updateSpringCoupling(1);
 updateSpringLength(1);
 updateRepulsionPower(1);
 
-document.getElementById("savePNG").onclick = function() {
-	svgenie.save( "pmapsvg" , { name: "test.png" });
-};
 
 </script>
 </body>
