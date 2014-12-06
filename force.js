@@ -136,6 +136,71 @@ CMap.isProperDiagonal = function(facecoor,diagIds){
 	return true;
 }
 
+CMap.pointInPolygon = function(coor,pt){
+	if( coor.some(function(c){return c==pt;}) )
+	{
+		return false;
+	}
+	var angle = 0;
+	var prev = coor[coor.length-1].copy().subVec(pt);
+	coor.forEach(function(c){ 
+		var cur = c.copy().subvec(pt);
+		angle += prev.angle(cur);
+		prev = cur;
+	});
+	return Math.abs(angle - 2*Math.PI) < 0.001;
+}
+
+CMap.segmentInPolygon = function(coor,line){
+	if( !pointInPolygon(coor,line[0]) || !pointInPolygon(coor,line[1]) )
+	{
+		return false;
+	}
+	for(var i=0;i<coor.length;i++)
+	{
+		if( CMap.segmentsIntersect( [coor[i],coor[(i+1)%coor.length]], line) )
+			return false;
+	}
+	return true;		
+}
+
+/*
+	input: coor - array of Vec2 representing corners of a polygon in ccw order
+	output: array of pairs of integers representing diagonals of the polygon that
+		triangulate it
+*/
+CMap.triangulatePolygon = function(coor){
+	// Use a naive ear cutting algorithm
+	var c = coor.map(function(x){return x;});
+	var ids = coor.map(function(x,i){return i;});
+	var diag = [];
+	var cur = 0;
+	while( c.length > 3 )
+	{ 
+		var prevnext = [(cur+c.length-1)%c.length, (cur+1)%c.length];
+		if( c[prevnext[0]] != c[prevnext[1]] && CMap.isProperDiagonal(c, prevnext) )
+		{
+			diag.push([ids[prevnext[0]],ids[prevnext[1]]]);
+			c.splice(cur,1);
+			ids.splice(cur,1);
+		} else
+		{
+			cur = prevnext[1];
+		}
+	}
+	return diag;
+}
+
+CMap.findPathInPolygon = function(coor,cornerIds)
+{
+	// Take the midpoints of the diagonals of a triangulation
+	// of the polygon to be the possible way points. 
+	var pt = CMap.triangulationPolygon(coor).map(function(d){
+		return coor[d[0]].copy().addVec(coor[d[1]]).mult(0.5);
+	});
+	
+}
+
 CMap.faceAngleSum = function(face,links,nodes){
 	var totAngle = 0.0;
 
