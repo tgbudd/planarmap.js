@@ -494,7 +494,7 @@ function splitFace(corners)
 		if( !CMap.isProperDiagonal(thisface,[c[0].faceindex,c[1].faceindex]) )
 		{
 			// Construct a bounding box
-			var boundingbox = {min: new Vec2(1000,1000), max: new Vec2(-1000,-1000)};
+			var boundingbox = {min: new Vec2(-1,-1), max: new Vec2(1,1)};
 			thisface.forEach(function(p){
 				if( p.x < boundingbox.min.x ) boundingbox.min.x = p.x;
 				if( p.y < boundingbox.min.y ) boundingbox.min.y = p.y;
