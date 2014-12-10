@@ -40,6 +40,13 @@ Vec2.prototype.isInBetween = function(v1,v2) {
 	var angle2 = v1.anglePos(v2);
 	return angle1 > 0 && angle1 < angle2;
 }
+// Return a unit vector that bisects the angle between this vector and v in ccw order
+// If the angle is zero return this.norm()
+Vec2.prototype.getBisector = function(v) {
+	return this.copy().normalize().rotate(0.5*this.anglePos(v));
+}
+
+function defaultFor(arg, val) { return typeof arg !== 'undefined' ? arg : val; }
 
 var CMap = CMap || {};
 
@@ -51,7 +58,8 @@ var CMap = CMap || {};
 		returns true when they intersect (in their interior)
 */
 CMap.segmentsIntersect = function( line1, line2, ignoreEndPoints ){
-	if( arguments.length < 3 ) ignoreEndPoints = true;
+	ignoreEndPoints = defaultFor(ignoreEndPoints,true);
+
 	if( !ignoreEndPoints && 
 		(line1[0] == line2[0] || line1[0] == line2[1]
 		|| line1[1] == line2[0] || line1[1] == line2[1] ) )
@@ -118,12 +126,8 @@ CMap.isProperDiagonal = function(facecoor,diagIds){
 	var line = [facecoor[diagIds[0]],facecoor[diagIds[1]]];
 
 	// Check that the directions are inward
-	if( !(facecoor[next(diagIds[0])]==facecoor[prev(diagIds[0])] || line[1].copy().subVec(line[0]).isInBetween(
-			facecoor[next(diagIds[0])].copy().subVec(line[0]),
-			facecoor[prev(diagIds[0])].copy().subVec(line[0]) ) ) || 
-		!(facecoor[next(diagIds[1])]==facecoor[prev(diagIds[1])] || line[0].copy().subVec(line[1]).isInBetween(
-			facecoor[next(diagIds[1])].copy().subVec(line[1]),
-			facecoor[prev(diagIds[1])].copy().subVec(line[1]) ) ) )
+	if( !CMap.isIngoingDirection(facecoor,diagIds[0],facecoor[diagIds[1]]) || 
+		!CMap.isIngoingDirection(facecoor,diagIds[1],facecoor[diagIds[0]]) )
 	{
 		return false;
 	}
@@ -134,6 +138,17 @@ CMap.isProperDiagonal = function(facecoor,diagIds){
 			return false;
 	}
 	return true;
+}
+
+CMap.isIngoingDirection = function(facecoor,corner,pt){
+	var next = (corner+1)%facecoor.length;
+	var prev = (corner+facecoor.length-1)%facecoor.length;
+
+	// Check that the direction is inward
+	return facecoor[next]==facecoor[prev] || 
+			pt.copy().subVec(facecoor[corner]).isInBetween(
+			facecoor[next].copy().subVec(facecoor[corner]),
+			facecoor[prev].copy().subVec(facecoor[corner]) ); 
 }
 
 CMap.pointInPolygon = function(coor,pt){
@@ -151,8 +166,10 @@ CMap.pointInPolygon = function(coor,pt){
 	return Math.abs(angle - 2*Math.PI) < 0.001;
 }
 
-CMap.segmentInPolygon = function(coor,line){
-	if( !pointInPolygon(coor,line[0]) || !pointInPolygon(coor,line[1]) )
+CMap.segmentInPolygon = function(coor,line,checkinpolygon){
+	checkinpolygon = defaultFor(checkinpolygon,true);
+	
+	if( checkinpolygon && (!pointInPolygon(coor,line[0]) || !pointInPolygon(coor,line[1])) )
 	{
 		return false;
 	}
@@ -183,6 +200,10 @@ CMap.triangulatePolygon = function(coor){
 			diag.push([ids[prevnext[0]],ids[prevnext[1]]]);
 			c.splice(cur,1);
 			ids.splice(cur,1);
+			if( prevnext[1] == 0 )
+			{
+				cur = 0;
+			}
 		} else
 		{
 			cur = prevnext[1];
@@ -195,10 +216,43 @@ CMap.findPathInPolygon = function(coor,cornerIds)
 {
 	// Take the midpoints of the diagonals of a triangulation
 	// of the polygon to be the possible way points. 
-	var pt = CMap.triangulationPolygon(coor).map(function(d){
+	var pt = CMap.triangulatePolygon(coor).map(function(d){
 		return coor[d[0]].copy().addVec(coor[d[1]]).mult(0.5);
 	});
-	
+	pt.splice(0,0,coor[cornerIds[1]],coor[cornerIds[0]]);
+	var queue = [0];
+	var parent = {"0": -1};
+
+	while( queue.length > 0 )
+	{
+		var cur = queue[0];
+		queue.splice(0,1);
+		if(	pt.some(function(p,i){
+			if( !(i in parent) )
+			{
+				if( (cur != 0 || CMap.isIngoingDirection(coor,cornerIds[1],p))
+					&& (i != 1 || CMap.isIngoingDirection(coor,cornerIds[0],pt[cur]))
+					&& CMap.segmentInPolygon(coor,[pt[cur],p],false) )
+				{
+					parent[i] = cur;
+					queue.push(i);
+					return i==1; 
+				}
+			}
+			return false;
+		}) )
+		{
+			break;
+		}
+	}
+	var path = [];
+	var cur = parent[1];
+	while( cur > 0 )
+	{
+		path.push(pt[cur]);
+		cur = parent[cur];
+	}
+	return path;
 }
 
 CMap.faceAngleSum = function(face,links,nodes){
