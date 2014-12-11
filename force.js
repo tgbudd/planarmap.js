@@ -109,6 +109,20 @@ CMap.segmentsIntersect = function( line1, line2, ignoreEndPoints ){
 	return between01(d0.cross(v2)/cross) && between01(d0.cross(v1)/cross); 
 }
 
+CMap.pointSegmentDistance = function(pt,line) {
+	var dir = line[1].copy().subVec(line[0]);
+	var ptvec = pt.copy().subVec(line[0]);
+	var dot = dir.dot(ptvec);
+	if( dot <= 0 )
+	{
+		return ptvec.norm();
+	} else if( dot >= dir.normSq() )
+	{
+		return pt.copy().subVec(line[1]).norm();
+	}
+	return Math.abs( dir.normalize().cross(ptvec) );
+}
+
 /*
 	input:
 		facecoor - an array of Vec2's representing the vertices
@@ -120,10 +134,17 @@ CMap.segmentsIntersect = function( line1, line2, ignoreEndPoints ){
 		Returns true when the diagonal divides the polygon into
 		two simple polygons.
 */
-CMap.isProperDiagonal = function(facecoor,diagIds){
+CMap.isProperDiagonal = function(facecoor,diagIds,mindist){
+	mindist = defaultFor(mindist,0.0001);
 	var next = function(i) { return (i+1)%facecoor.length; };
 	var prev = function(i) { return (i+facecoor.length-1)%facecoor.length; };
 	var line = [facecoor[diagIds[0]],facecoor[diagIds[1]]];
+
+	if( facecoor.some(function(c){
+			return c != line[0] && c != line[1]	&& CMap.pointSegmentDistance(c,line) < mindist;
+		}) ) {
+		return false;
+	}
 
 	// Check that the directions are inward
 	if( !CMap.isIngoingDirection(facecoor,diagIds[0],facecoor[diagIds[1]]) || 
