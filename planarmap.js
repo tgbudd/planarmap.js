@@ -40,6 +40,25 @@ CMap.Face.prototype.insertEdgeBefore = function(oldedge) {
 		this.edges.splice(index,0,arguments[i]);
 	}
 }
+CMap.Face.prototype.copy = function() {
+	var face = new CMap.Face();
+	face.edges = this.edges.map(function(e){
+		return new CMap.OrientedEdge(e.edge,e.reversed);
+	});
+	for( key in this.attr )
+	{
+		if( this.attr.hasOwnProperty(key) )
+		{
+			face.attr[key] = this.attr[key];
+		}
+	}
+	return face;
+}
+CMap.Face.prototype.updateReferences = function(dict) {
+	this.edges.forEach(function(e){
+		e.edge = dict[e.edge.uid];
+	});	
+}
 
 CMap.OrientedEdge = function(edge,reversed){
 	"use strict";
@@ -131,6 +150,25 @@ CMap.Node.prototype.insertEdgeBefore = function(oldedge) {
 		this.edges.splice(index,0,arguments[i]);
 	}
 }
+CMap.Node.prototype.copy = function() {
+	var node = new CMap.Node();
+	node.edges = this.edges.map(function(e){
+		return new CMap.OrientedEdge(e.edge,e.reversed);
+	});
+	for( key in this.attr )
+	{
+		if( this.attr.hasOwnProperty(key) )
+		{
+			node.attr[key] = this.attr[key];
+		}
+	}
+	return node;
+}
+CMap.Node.prototype.updateReferences = function(dict) {
+	this.edges.forEach(function(e){
+		e.edge = dict[e.edge.uid];
+	});	
+}
 
 CMap.Edge = function (start,end,left,right){
 	this.start = start;
@@ -150,7 +188,23 @@ CMap.Edge.prototype.getOriented = function(reversed){
 	reversed = defaultFor(reversed,false);
 	return new CMap.OrientedEdge(this,reversed);
 }
-
+CMap.Edge.prototype.copy = function() {
+	var edge = new CMap.Edge(this.start,this.end,this.left,this.right);
+	for( key in this.attr )
+	{
+		if( this.attr.hasOwnProperty(key) )
+		{
+			edge.attr[key] = this.attr[key];
+		}
+	}
+	return edge;
+}
+CMap.Edge.prototype.updateReferences = function(dict) {
+	this.start = dict[this.start.uid];
+	this.end = dict[this.end.uid];
+	this.left = dict[this.left.uid];
+	this.right = dict[this.right.uid];
+}
 
 CMap.UIdContainer = function (prefix){
 	"use strict";
@@ -158,10 +212,12 @@ CMap.UIdContainer = function (prefix){
 	var container = {};
 	var newUId = 0;
 	var data = {};
+	var size = 0;
 	
 	container.insert = function(entry){
 		var uid = prefix + newUId;
 		newUId++; 
+		size++;
 		data[uid] = entry;
 		entry.uid = uid;
 		return entry;
@@ -186,6 +242,7 @@ CMap.UIdContainer = function (prefix){
 				data[uid].clear();
 			}
 			delete data[uid];
+			size--;
 		} else
 		{
 			throw "No such entry exists.";
@@ -204,6 +261,7 @@ CMap.UIdContainer = function (prefix){
 			}
 			delete data[uid];
 		}
+		size = 0;
 		return container;
 	}
 	container.every = function(f){
@@ -232,6 +290,9 @@ CMap.UIdContainer = function (prefix){
 			f(data[id]);
 		}
 	}
+	container.size = function(){
+		return size;
+	}
 	return container;
 }
 
@@ -251,14 +312,23 @@ CMap.PlanarMap = function (){
 			onChange[type].forEach(function(f){fun(f);});
 		}
 	}
+	planarmap.numNodes = function(){
+		return nodes.size();
+	}
 	planarmap.nodes = function(){
 		return nodes;
 	}
 	planarmap.edges = function(){
 		return edges;
 	}
+	planarmap.numEdges = function(){
+		return edges.size();
+	}
 	planarmap.faces = function(){
 		return faces;
+	}
+	planarmap.numFaces = function(){
+		return faces.size();
 	}
 	planarmap.outerface = function(){
 		return outerface;
@@ -342,6 +412,22 @@ CMap.PlanarMap = function (){
 		doOnChange("insertDiagonal",function(f){f(edge);});
 		return edge;
 	}
+	planarmap.splitEdge = function(orientededge){
+		var newnode = planarmap.newNode();
+		var newedge = planarmap.newEdge(newnode,orientededge.end(),
+			orientededge.left(),orientededge.right());
+		orientededge.left().insertEdgeBefore(orientededge.next(),
+			newedge.getOriented());
+		orientededge.right().insertEdgeBefore(orientededge.reverse(),
+			newedge.getOriented(true));
+		orientededge.end(newnode);
+		newnode.edges.push(orientededge.reverse());
+		newnode.edges.push(newedge.getOriented());
+		newedge.end.edges[newedge.end.edgeIndex(orientededge.reverse())]
+			= newedge.getOriented(true);
+		doOnChange("splitEdge",function(f){f(newnode);});
+		return newnode;
+	}
 	planarmap.checkIncidence = function(){
 		if( !nodes.every(function(n){
 			return n.edges.every(function(e){return e.start() == n;});
@@ -372,6 +458,35 @@ CMap.PlanarMap = function (){
 			return false;
 		}
 		return true;
+	}
+	planarmap.deepCopy = function(){
+		var map = CMap.PlanarMap();
+		var dict = {};
+		nodes.forEach(function(n){
+			var node = n.copy();
+			map.nodes().insert(node);
+			dict[n.uid] = node;
+		});
+		edges.forEach(function(e){
+			var edge = e.copy();
+			map.edges().insert(edge);
+			dict[e.uid] = edge;
+		});
+		faces.forEach(function(f){
+			var face = f.copy();
+			map.faces().insert(face);
+			dict[f.uid] = face;
+		});
+		map.nodes().forEach(function(n){
+			n.updateReferences(dict);
+		});
+		map.edges().forEach(function(e){
+			e.updateReferences(dict);
+		});
+		map.faces().forEach(function(f){
+			f.updateReferences(dict);
+		});
+		return map;
 	}
 	return planarmap;
 };
