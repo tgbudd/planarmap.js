@@ -118,6 +118,12 @@ CMap.OrientedEdge.prototype.prev = function(){
 CMap.OrientedEdge.prototype.reverse = function(){
 	return new CMap.OrientedEdge(this.edge,!this.reversed);
 }
+CMap.OrientedEdge.prototype.isEqual = function(oredge){
+	return this.edge == oredge.edge && this.reversed == oredge.reversed;
+}
+CMap.OrientedEdge.prototype.isReverse = function(oredge){
+	return this.edge == oredge.edge && this.reversed != oredge.reversed;
+}
 
 CMap.Node = function (){
 	"use strict";
@@ -369,7 +375,7 @@ CMap.PlanarMap = function (){
 	/* Add edge starting at the corner to the left of the
 	 * start of orientededge and ending at a new node. 
 	 */ 
-	planarmap.insertEdgeBefore = function(orientededge){
+	planarmap.insertEdgeNextTo = function(orientededge){
 		var endnode = planarmap.newNode();
 		var face = orientededge.left();
 		var startnode = orientededge.start();
@@ -380,7 +386,7 @@ CMap.PlanarMap = function (){
 		face.insertEdgeBefore(orientededge,
 			edge.getOriented(false),
 			edge.getOriented(true));
-		doOnChange("insertEdgeBefore",function(f){f(edge);});
+		doOnChange("insertEdgeNextTo",function(f){f(edge.getOriented());});
 		return edge;
 	}
 	planarmap.insertDiagonal = function(face,indices){
