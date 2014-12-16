@@ -1,6 +1,18 @@
 <html>
 <head>
 <style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+#pmap {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
 .link {
 	stroke: #999;
 }
@@ -65,7 +77,7 @@ svg circle.node {
 	<span id="centerPullCouplingValue">1</span>
 </p>
 </div>
-<script src="./thirdparty/d3/d3.js"></script>
+<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
 <script src="geometry.js"></script>
 <script src="layout.js"></script>
 <script src="force.js"></script>
@@ -77,38 +89,15 @@ var layoutupdater = new CMap.LayoutUpdater()
 	.registerAll(planarmap);
 planarmap.singleEdgeMap();
 
-
-var nodes = [{ pos: new Vec2(0.5,0)}, {pos: new Vec2(-0.5,0)}];
-var links = [ [0,1] ];
-var edges = [ [0] ];
-var faces = [ {links: [{id:0,ccw:false},{id:0,ccw:true}],
-			  outer: true,
-			  color: "#d0d0ff"}];
-var externalface = faces[0];
-
 var helplines = [];
 var corners = [];
 
-var scale = 60;
-var offset = {x: 650, y: 450};
-function toScreenCoor(d)
-{
-	//return new Vec2(d.x,d.y);
-	return new Vec2(scale*d.x + offset.x,-scale*d.y + offset.y);
-}
-function fromScreenCoor(c)
-{
-	//return new Vec2(c.x,c.y);
-	return new Vec2((c.x-offset.x)/scale,(-c.y+offset.y)/scale);
-}
-
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
-	.attr("width",1300).attr("height",900)
-	//.attr("viewBox","-15 -15 15 15")
-	//.attr("preserveAspectRatio", "xMidYMid meet");
+	.attr("viewBox","-15 -15 15 15")
+	.attr("preserveAspectRatio", "xMidYMid meet");
 
-
+/*
 var force = CMap.force().nodes(nodes)
 	.faces(faces)
 	.links(links)
@@ -369,17 +358,6 @@ function polygonMouseMove(d)
 	
 
 }
-/*
-function polygonClick(d,i)
-{
-	if( corners.length == 1 )
-	{
-		insertEdge(corners[0]);
-	}
-	removeHelpLines();
-}
-*/
-
 
 function polygonMouseDown(d)
 {
@@ -403,13 +381,6 @@ function polygonMouseUp(d)
 		if( segmentStartCorner.faceindex != corners[0].faceindex)
 		{
 			splitFace([segmentStartCorner,corners[0]]);	
-			/*var thisface = corners[0].face.links.map(function(l){
-				return (l.ccw? nodes[links[l.id][0]].pos : nodes[links[l.id][1]].pos );
-			});
-			if( CMap.isProperDiagonal(thisface, [segmentStartCorner.faceindex, corners[0].faceindex]) )
-			{
-				splitFace([segmentStartCorner,corners[0]]);	
-			}*/
 		} else
 		{
 			insertEdge(corners[0]);
@@ -667,7 +638,7 @@ function updateMap()
 updateSpringCoupling(1);
 updateSpringLength(1);
 updateRepulsionPower(1);
-
+*/
 
 </script>
 </body>

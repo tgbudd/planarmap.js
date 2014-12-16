@@ -1,0 +1,84 @@
+<html>
+<head>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+.link {
+	stroke: #999;
+}
+.forcevec {
+	stroke: red;
+}
+svg polygon.corner {
+	pointer-events: none;
+	fill: #dd5020;
+}
+svg text.label {
+	pointer-events: none;
+	font-family: Verdana;
+	font-size: 14;
+}
+svg path.link {
+	stroke-width: 2;
+	stroke: #aaaaaa;
+	fill: none;
+}
+svg line.segmenthelper {
+	pointer-events: none;
+	stroke-width: 2;
+	stroke: #aaaaaa;
+	stroke-dasharray: 5,5;
+}
+svg circle.node {
+	cursor:move;
+}
+#controls label {
+	display: inline-block;
+	width: 140px;
+	text-align: right;
+}
+</style>
+</head>
+<body>
+<div id="pmap">
+</div>
+<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
+<script>
+
+var svg = d3.select("#pmap").append("svg")
+	.attr("id","pmapsvg")
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-15 -10 30 20")
+	.attr("preserveAspectRatio", "xMidYMid meet")
+	.call(d3.behavior.zoom().on("zoom", redraw))
+
+var group = svg.append("svg:g");
+
+group.append("rect").attr("fill","red")
+	.attr("x",-3)
+	.attr("y",-2)
+	.attr("width",6)
+	.attr("height",4);
+group.append("line").attr("stroke-width","0.1")
+	.attr("stroke","blue")
+	.attr("x1","1")
+	.attr("y1","-3")
+	.attr("x2",5)
+	.attr("y2",3);
+
+function redraw()
+{
+	group.attr("transform",
+      "scale(" + d3.event.scale + ")");
+}
+
+redraw();
+
+</script>
+</body>
+</html>
