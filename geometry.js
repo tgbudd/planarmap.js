@@ -317,6 +317,6 @@ CMap.polygonAngleSum = function(coor){
 		}
 		prevprevCoor = prevCoor;
 		prevCoor = c;
-	}
+	});
 	return angle;
 };

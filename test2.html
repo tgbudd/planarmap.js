@@ -64,9 +64,14 @@ svg circle.node {
 	<input type="range" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
 	<span id="centerPullCouplingValue">1</span>
 </p>
+<p>
+	<input type="button" id="saveasSVG" value="Save as SVG"/>
+</p>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.1/d3.min.js"></script>
 <script src="force.js"></script>
+<script src="geometry.js"></script>
+<script src="thirdparty/crowbar/svg-crowbar.js"></script>
 <script>
 
 /*
@@ -173,6 +178,13 @@ function updateCenterPullCoupling(x) {
 	d3.select("#centerPullCouplingValue").text(x);	
 	force.resume();	
 }			
+d3.select("#saveasSVG").on("click",function(){
+	var sources = crowbar.findAndParseSVGs();
+	if(sources.length > 0){
+		//Just download the first
+		crowbar.download(sources[0]);
+	}
+});
 
 var backgroundLayer = svg.append("g").attr("class","backgroundLayer");
 var backgroundRect = backgroundLayer.append("rect")
