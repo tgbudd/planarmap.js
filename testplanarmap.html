@@ -19,9 +19,6 @@ html, body {
 .forcevec {
 	stroke: red;
 }
-svg {
-	border: 1px solid black;
-}
 svg polygon.corner {
 	pointer-events: none;
 	fill: #dd5020;
@@ -29,21 +26,27 @@ svg polygon.corner {
 svg text.label {
 	pointer-events: none;
 	font-family: Verdana;
-	font-size: 14;
+	font-size: 0.3;
 }
 svg path.link {
-	stroke-width: 2;
+	stroke-width: 0.05;
 	stroke: #aaaaaa;
 	fill: none;
 }
 svg line.segmenthelper {
 	pointer-events: none;
-	stroke-width: 2;
+	stroke-width: 0.05;
 	stroke: #aaaaaa;
 	stroke-dasharray: 5,5;
 }
 svg circle.node {
 	cursor:move;
+}
+#controls {
+	z-index:101; 
+	position:absolute;
+	top:20px;
+	right:20px;
 }
 #controls label {
 	display: inline-block;
@@ -85,7 +88,7 @@ svg circle.node {
 <script>
 
 var planarmap = CMap.PlanarMap();
-var layoutupdater = new CMap.LayoutUpdater()
+var layoutupdater = CMap.LayoutUpdater()
 	.registerAll(planarmap);
 planarmap.singleEdgeMap();
 
@@ -94,17 +97,21 @@ var corners = [];
 
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
-	.attr("viewBox","-15 -15 15 15")
-	.attr("preserveAspectRatio", "xMidYMid meet");
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-8 -5 16 10")
+	.attr("preserveAspectRatio", "xMidYMid meet")
+	.call(d3.behavior.zoom().on("zoom",onZoom));
 
-/*
-var force = CMap.force().nodes(nodes)
-	.faces(faces)
-	.links(links)
-	.clip({use: false, minX: fromScreenCoor({x:0,y:svg.attr("height")}).x,
-					  minY: fromScreenCoor({x:0,y:svg.attr("height")}).y,
-					  maxX: fromScreenCoor({x:svg.attr("width"),y:0}).x,
-					  maxY: fromScreenCoor({x:svg.attr("width"),y:0}).y})
+var zoomGroup = svg.append("g").attr("id","zoomgroup");
+
+function onZoom(){
+	zoomGroup.attr("transform",
+		"scale(" + d3.event.scale + ")");
+}
+
+
+var force = CMap.force(planarmap)
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.4})
 	.on("tick",updateMap)
 	.on("end",updateMap);
@@ -138,24 +145,24 @@ function updateCenterPullCoupling(x) {
 	force.resume();	
 }			
 
-var backgroundLayer = svg.append("g").attr("class","backgroundLayer");
+var backgroundLayer = zoomGroup.append("g").attr("class","backgroundLayer");
 var backgroundRect = backgroundLayer.append("rect")
 	.attr("fill","white")
 	.attr("width","100%").attr("height","100%").attr("x",0).attr("y",0)
-	.on("mouseout",function() { removeCorners(); d3.select(this).style("fill","white");})
-	.on("mousemove",function(){ polygonMouseMove(externalface);} )
-	.on("mousedown",function(){ polygonMouseDown(externalface);} )
-	.on("mouseup",function(){ polygonMouseUp(externalface);} );
+//	.on("mouseout",function() { removeCorners(); d3.select(this).style("fill","white");})
+//	.on("mousemove",function(){ polygonMouseMove(externalface);} )
+//	.on("mousedown",function(){ polygonMouseDown(externalface);} )
+//	.on("mouseup",function(){ polygonMouseUp(externalface);} );
 
-var faceLayer = svg.append("g").attr("class","faceLayer");
+var faceLayer = zoomGroup.append("g").attr("class","faceLayer");
 
-var cornerLayer = svg.append("g").attr("class","cornerLayer");
+var cornerLayer = zoomGroup.append("g").attr("class","cornerLayer");
 
-var linkLayer = svg.append("g").attr("class","linkLayer");
+var edgeLayer = zoomGroup.append("g").attr("class","edgeLayer");
 
-var helpLineLayer = svg.append("g").attr("class","helpLineLayer");
+var helpLineLayer = zoomGroup.append("g").attr("class","helpLineLayer");
 
-var nodeLayer = svg.append("g").attr("class","nodeLayer");
+var nodeLayer = zoomGroup.append("g").attr("class","nodeLayer");
 
 var drag = d3.behavior.drag()
 	.origin(function(d){return d;})
@@ -168,19 +175,21 @@ var segmentStartCorner = {};
 function updateFaceLayer()
 {
 	var facePolygons = faceLayer.selectAll("polygon")
-		.data(faces.filter(function(f) { return !f.outer; }));
+		.data(planarmap.faces().array().filter(function(f) { return !f.layout.outer; }),
+			function(f){ return f.uid; });
 	
 	facePolygons.enter().append("polygon")
 		.attr("fill","white" )
 		.attr("stroke","")
-		.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill","white");})
-		.on("mousemove",polygonMouseMove)
-		.on("mousedown",polygonMouseDown)
-		.on("mouseup",polygonMouseUp);
+	//	.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill","white");})
+	//	.on("mousemove",polygonMouseMove)
+	//	.on("mousedown",polygonMouseDown)
+	//	.on("mouseup",polygonMouseUp)
 		
 	facePolygons.exit().remove();
 }
 
+/*
 function updateCornerLayer()
 {
 	var cornerPolygons = cornerLayer.selectAll("polygon")
@@ -192,17 +201,18 @@ function updateCornerLayer()
 		.attr("points",cornerPolygonPoints);
 		
 	cornerPolygons.exit().remove();
-}
+}*/
 
-function updateLinkLayer()
+function updateEdgeLayer()
 {
-	var linkLines = linkLayer.selectAll("path")
-		.data(edges);
+	var edgePaths = edgeLayer.selectAll("path")
+		.data(planarmap.edges().array(),
+			function(e){return e.uid;});
 		
-	linkLines.enter().append("path")
+	edgePaths.enter().append("path")
 		.attr("class","link");
 	
-	linkLines.exit().remove();
+	edgePaths.exit().remove();
 }
 
 function updateHelpLineLayer()
@@ -219,20 +229,22 @@ function updateHelpLineLayer()
 function updateNodeLayer()
 {
 	var nodeGroups = nodeLayer.selectAll("g.node")
-		.data(nodes.filter(function(n){return !n.auxiliary;}));
+		.data(planarmap.nodes().array(),
+			function(n){return n.uid;}
+		);
 		
 	var newNodeGroups = nodeGroups.enter().append("g")
 		.attr("class","node");
 		
 	newNodeGroups.append("circle")
 	   	.attr("class","node")
-	   	.attr("r","7")
-	   	//.attr("r", "0.01")//"7px")
+	   	.attr("r","0.1")
 	   	.attr("fill", "blue")
 	 	.call(drag);		
 
 	newNodeGroups.append("text")
-		.attr("dx",9)
+		.attr("dx",0.14)
+		.attr("dy",-0.1)
 		.attr("class","label")
 		.style("text-anchor","start")
 		.text(function(d,i) {return i;});
@@ -241,23 +253,24 @@ function updateNodeLayer()
 }
 
 updateFaceLayer();
-updateCornerLayer();
-updateLinkLayer();
+//updateCornerLayer();
+updateEdgeLayer();
 updateNodeLayer();
 
 function dragstart(d)
 {
 	force.dragforce().drag = true;
 	force.dragforce().node = d;
+	
+	var p = d3.mouse(d3.select("#zoomgroup").node());
+	force.dragforce().cursor = new Vec2(p[0],p[1]);
 
-	var p = d3.mouse(svg.node());
-	force.dragforce().cursor = fromScreenCoor({x:p[0],y:p[1]});
 	force.resume();
 }
 function dragmove(d)
 {
-	var p = d3.mouse(svg.node());
-	force.dragforce().cursor = fromScreenCoor({x:p[0],y:p[1]});
+	var p = d3.mouse(d3.select("#zoomgroup").node());
+	force.dragforce().cursor = new Vec2(p[0],p[1]);
 	force.resume();
 }
 function dragend(d)
@@ -269,7 +282,7 @@ function cornerRadius(angle)
 {
 	return Math.max(0.35,Math.min(1.3,0.3/angle));
 }
-
+/*
 function polygonMouseMove(d)
 {
 	d3.event.preventDefault();
@@ -537,6 +550,8 @@ function splitFace(corners)
 	updateLinkLayer();
 	force.resume();
 }
+*/
+
 
 function removeHelpLines()
 {
@@ -549,7 +564,7 @@ function removeHelpLines()
 		updateHelpLineLayer();
 	}
 }
-
+/*
 function removeCorners()
 {
 	//if( removeCorners.length > 0 )
@@ -579,19 +594,18 @@ function cornerPolygonPoints(corner)
 		var scr = toScreenCoor(p);
 		return [scr.x,scr.y].join(","); }).join(" ");
 }
-
+*/
 function roundCornerPath(path,radius)
 {
 	function coorstr(p) { 
-		var scr = toScreenCoor(p);
-		return scr.x + " " + scr.y;
+		return p.x + " " + p.y;
 	}
 	var p = "M " + coorstr(path[0]);
 	
 	for(var i=1;i<path.length-1;i++)
 	{
-		var prev = path[i-1].copy().subVec(path[i]);
-		var next = path[i+1].copy().subVec(path[i]);
+		var prev = path[i-1].minus(path[i]);
+		var next = path[i+1].minus(path[i]);
 		var thisradius = Math.min(radius,Math.min(prev.norm()/2,next.norm()/2));
 		prev.normalize().mult(thisradius).addVec(path[i]);
 		next.normalize().mult(thisradius).addVec(path[i]);
@@ -604,41 +618,38 @@ function roundCornerPath(path,radius)
 function updateMap()
 {
 	nodeLayer.selectAll("g.node").attr("transform", function(d){
-		return "translate(" + [toScreenCoor(d.pos).x,toScreenCoor(d.pos).y] + ")";
+		return "translate(" + d.pos.x + "," + d.pos.y + ")";
    	});
 
-	linkLayer.selectAll("path")
-		.attr("d", function(edg) {
-			var coor = edg.map(function(l) {
-				return nodes[links[l][0]].pos;
-			});
-			coor.push(nodes[links[edg[edg.length-1]][1]].pos);
-			return roundCornerPath(coor, 0.5);
+	edgeLayer.selectAll("path")
+		.attr("d", function(edge) {
+			var coor = CMap.getVerticesOnEdge(edge.getOriented(),true,true)
+				.map(function(v){return v.pos;});
+			return roundCornerPath(coor, 0.05);
 		});
 	
-	cornerLayer.selectAll("polygon")
-		.attr("points",cornerPolygonPoints);
+	//cornerLayer.selectAll("polygon")
+	//	.attr("points",cornerPolygonPoints);
 	
 	helpLineLayer.selectAll("line")
-		.attr("x1", function(d) { return toScreenCoor(d.p1).x; })
-		.attr("y1", function(d) { return toScreenCoor(d.p1).y; })
-		.attr("x2", function(d) { return toScreenCoor(d.p2).x; })
-		.attr("y2", function(d) { return toScreenCoor(d.p2).y; });
+		.attr("x1", function(d) { return d.p1.x; })
+		.attr("y1", function(d) { return d.p1.y; })
+		.attr("x2", function(d) { return d.p2.x; })
+		.attr("y2", function(d) { return d.p2.y; });
 
 	faceLayer.selectAll("polygon")
 		.attr("points",function(d) {
-		return d.links.map(function(p) { 
-			var coor = toScreenCoor(nodes[links[p.id][(p.ccw?0:1)]].pos);
-			return [coor.x,coor.y].join(","); 
-		}).join(" ");
-	});
+			return CMap.getFacePolygon(d)
+				.map(function(v){return v.pos.x + "," + v.pos.y;})
+				.join(" ");
+			});
 
 }
 
 updateSpringCoupling(1);
 updateSpringLength(1);
 updateRepulsionPower(1);
-*/
+
 
 </script>
 </body>

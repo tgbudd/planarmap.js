@@ -16,6 +16,7 @@ CMap.Face = function (){
 	// for which e.left == this in ccw order.
 	this.edges = [];
 	this.attr = {};
+	this.layout = {};
 }
 CMap.Face.prototype.clear = function() {
 	while(this.edges.length > 0){
@@ -182,7 +183,7 @@ CMap.Edge = function (start,end,left,right){
 	this.left = left;
 	this.right = right;
 	this.attr = {};
-	this.layout = {};
+	this.layout = {vert: []};
 }
 CMap.Edge.prototype.clear = function(){
 	this.start = null;
@@ -258,6 +259,11 @@ CMap.UIdContainer = function (prefix){
 	container.data = function(){
 		return data;
 	}
+	container.array = function(){
+		var arr = [];
+		container.forEach(function(d){arr.push(d)});
+		return arr;
+	}
 	container.clear = function(clearfirst){
 		clearfirst = defaultFor(clearfirst,true);
 		for( var uid in data ){
@@ -296,6 +302,21 @@ CMap.UIdContainer = function (prefix){
 			f(data[id]);
 		}
 	}
+	container.map = function(f){
+		var arr = [];
+		container.forEach(function(d){
+			arr.push(f(d));
+		});
+		return arr;
+	}
+	container.total = function(f){
+		var tot=0;
+		for( var id in data )
+		{
+			tot += f(data[id]);
+		}
+		return tot;
+	}
 	container.size = function(){
 		return size;
 	}
@@ -313,7 +334,7 @@ CMap.PlanarMap = function (){
 	var onChange = {};
 
 	function doOnChange(type,fun){
-		if( onChange[type] )
+		if( type in onChange )
 		{
 			onChange[type].forEach(function(f){fun(f);});
 		}
@@ -349,7 +370,7 @@ CMap.PlanarMap = function (){
 		return faces.insert(new CMap.Face());
 	}
 	planarmap.onChange = function(type,callback){
-		if( !(type in on) )
+		if( !(type in onChange) )
 		{
 			onChange[type] = [];
 		}

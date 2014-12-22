@@ -9,11 +9,20 @@ Vec2.prototype.addVec = function(vec){
 	this.y += vec.y; 
 	return this; 
 };
+Vec2.prototype.plus = function(vec){
+	return new Vec2(this.x+vec.x,this.y+vec.y);
+}
 Vec2.prototype.subVec = function(vec){ 
 	this.x -= vec.x; 
 	this.y -= vec.y; 
 	return this; 
 };
+Vec2.prototype.minus = function(vec){
+	return new Vec2(this.x-vec.x,this.y-vec.y);
+}
+Vec2.prototype.distance = function(vec){
+	return this.minus(vec).norm();
+}
 Vec2.prototype.mult = function(r) { 
 	this.x *= r; 
 	this.y *= r; 
@@ -319,4 +328,71 @@ CMap.polygonAngleSum = function(coor){
 		prevCoor = c;
 	});
 	return angle;
+};
+
+CMap.polygonIsSimple = function(pol,outer){
+	outer = defaultFor(outer,false);
+	var angle = CMap.polygonAngleSum(pol);
+	if( outer )
+	{
+		if( Math.abs(angle-(pol.length+2)*Math.PI) > 0.1 )
+			return false;
+	}else
+	{
+		if( Math.abs(angle-(pol.length-2)*Math.PI) > 0.1 )
+			return false;
+	}
+	if( pol.length == 3 )
+	{
+		return true;
+	}
+	
+	var eventQueue = [];
+	for(var i=0;i<pol.length;i++)
+	{
+		var segment = {p: pol[i], p2: pol[(i+1)%pol.length] };
+		segment.left = segment.p.x <= segment.p2.x;
+		eventQueue.push(segment);
+		eventQueue.push({p:segment.p2,p2:segment.p,left:!segment.left});
+	}
+	eventQueue.sort(function(a,b){ return (a.p==b.p? a.p2.x-b.p2.x : a.p.x-b.p.x); });
+	for(var i=0;i<eventQueue.length-1;i++)
+	{
+		if( eventQueue[i+1].p == eventQueue[i].p && 
+			eventQueue[i+1].p2 == eventQueue[i].p2 )
+		{
+			eventQueue[i+1].double = true;
+		}
+	}
+	eventQueue = eventQueue.filter(function(e){ return !("double" in e);});
+	var sweepLine = [];
+	return eventQueue.every(function(e){
+		if( e.left )
+		{
+			var position = 0;
+			if( sweepLine.some(function(s,i){ position=i; return (s.p == e.p ? 
+					(s.p2.y - s.p.y)*(e.p2.x-e.p.x) >= (e.p2.y - e.p.y)*(s.p2.x-s.p.x) : s.p.y >= e.p.y); }) ) {
+				sweepLine.splice(position,0,e);
+			} else
+			{
+				sweepLine.push(e);
+				position = sweepLine.length-1;
+			}
+			if( position > 0 && CMap.segmentsIntersect([e.p,e.p2],[sweepLine[position-1].p,sweepLine[position-1].p2]) )
+				return false;
+			if( position < sweepLine.length-1 && CMap.segmentsIntersect([e.p,e.p2],
+								[sweepLine[position+1].p,sweepLine[position+1].p2]) )
+				return false;
+		} else
+		{
+			var position = 0;
+			sweepLine.some(function(s,i){ position=i; return s.link == e.link; });
+			sweepLine.splice(position,1);
+			if( position > 0 && position < sweepLine.length &&
+				CMap.segmentsIntersect( [sweepLine[position].p,sweepLine[position].p2], 
+										[sweepLine[position-1].p,sweepLine[position-1].p2] ) )
+				return false;
+		}
+		return true;
+	});
 };
