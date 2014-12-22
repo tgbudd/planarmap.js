@@ -113,7 +113,7 @@ CMap.OrientedEdge.prototype.next = function(){
 }
 CMap.OrientedEdge.prototype.prev = function(){
 	var index = this.left().edgeIndex(this)-1;
-	if( index < 0 ) index = this.left().edges.length;
+	if( index < 0 ) index = this.left().edges.length-1;
 	return this.left().edges[index];
 }
 CMap.OrientedEdge.prototype.reverse = function(){

@@ -91,6 +91,10 @@ var planarmap = CMap.PlanarMap();
 var layoutupdater = CMap.LayoutUpdater()
 	.registerAll(planarmap);
 planarmap.singleEdgeMap();
+var thisedge = planarmap.insertDiagonal(planarmap.faces().get("face0"),[0,1]);
+planarmap.insertEdgeNextTo(thisedge.getOriented());
+planarmap.insertEdgeNextTo(thisedge.getOriented(true));
+
 
 var helplines = [];
 var corners = [];
@@ -179,7 +183,7 @@ function updateFaceLayer()
 			function(f){ return f.uid; });
 	
 	facePolygons.enter().append("polygon")
-		.attr("fill","white" )
+		.attr("fill","lightblue" )
 		.attr("stroke","")
 	//	.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill","white");})
 	//	.on("mousemove",polygonMouseMove)
@@ -625,7 +629,7 @@ function updateMap()
 		.attr("d", function(edge) {
 			var coor = CMap.getVerticesOnEdge(edge.getOriented(),true,true)
 				.map(function(v){return v.pos;});
-			return roundCornerPath(coor, 0.05);
+			return roundCornerPath(coor, 0.5);
 		});
 	
 	//cornerLayer.selectAll("polygon")

@@ -270,6 +270,11 @@ CMap.triangulatePolygon = function(coor){
 
 CMap.findPathInPolygon = function(coor,cornerIds)
 {
+	if( coor.length == 3 )
+	{
+		return [coor[0].plus(coor[1]).plus(coor[2]).divide(3)];
+	}
+	
 	// Take the midpoints of the diagonals of a triangulation
 	// of the polygon to be the possible way points. 
 	var pt = CMap.triangulatePolygon(coor).map(function(d){
@@ -310,6 +315,68 @@ CMap.findPathInPolygon = function(coor,cornerIds)
 	}
 	return path;
 }
+CMap.findPathOutsidePolygon = function(coor,cornerIds)
+{
+	// Construct a bounding box
+	var boundingbox = {min: new Vec2(-1,-1), max: new Vec2(1,1)};
+	coor.forEach(function(p){
+		if( p.x < boundingbox.min.x ) boundingbox.min.x = p.x;
+		if( p.y < boundingbox.min.y ) boundingbox.min.y = p.y;
+		if( p.x > boundingbox.max.x ) boundingbox.max.x = p.x;
+		if( p.y > boundingbox.max.y ) boundingbox.max.y = p.y;
+	});
+	var center = boundingbox.max.plus(boundingbox.min).mult(0.5);
+	boundingbox.min.subVec(center).mult(1.4).addVec(center);
+	boundingbox.max.subVec(center).mult(1.4).addVec(center);
+	var box = [ boundingbox.min, 
+				new Vec2(boundingbox.max.x, boundingbox.min.y),
+				boundingbox.max,
+				new Vec2(boundingbox.min.x, boundingbox.max.y) ];
+	
+	// Choose the vertex furthest away from the corners c
+	var distance = 0;
+	var index = 0;
+	coor.forEach(function(p,i){
+		var d = p.copy().subVec(coor[cornerIds[0]]).norm() 
+			  + p.copy().subVec(coor[cornerIds[1]]).norm();
+		if( d > distance )
+		{
+			distance = d;
+			index = i;
+		}
+	});
+	
+	var next = coor[(index+1)%coor.length];
+	var prev = coor[(index+coor.length-1)%coor.length];
+	var normal = coor[index].minus(prev);
+	if( next != prev )
+	{
+		normal = next.minus(coor[index])
+					 .getBisector(prev.minus(coor[index]));
+	}
+	// Rearrange box to line up with the normal
+	if( normal.x <= 0 && normal.y > 0 )
+	{
+		box.unshift(box.pop());
+	} else if( normal.x > 0 )
+	{
+		box.push(box.shift());
+		if( normal.y > 0 )
+		{
+			box.push(box.shift());
+		}
+	}
+	var newcoor = coor.slice();
+	newcoor.splice(index,0,coor[index],
+		box[0], box[0].copy().addVec(box[1]).mult(0.5),
+		box[1], box[1].copy().addVec(box[2]).mult(0.5),
+		box[2], box[2].copy().addVec(box[3]).mult(0.5),
+		box[3], box[3].copy().addVec(box[0]).mult(0.5),
+		box[0]);
+	return CMap.findPathInPolygon(newcoor,
+		[cornerIds[0] + (cornerIds[0] > index ? 10 : 0)
+		,cornerIds[1] + (cornerIds[1] > index ? 10 : 0)]);
+}
 
 CMap.polygonAngleSum = function(coor){
 	var angle = 0.0;
@@ -329,7 +396,9 @@ CMap.polygonAngleSum = function(coor){
 	});
 	return angle;
 };
-
+CMap.polygonExteriorAngle = function(coor){
+	return coor.length * Math.PI - CMap.polygonAngleSum(coor);
+}
 CMap.polygonIsSimple = function(pol,outer){
 	outer = defaultFor(outer,false);
 	var angle = CMap.polygonAngleSum(pol);

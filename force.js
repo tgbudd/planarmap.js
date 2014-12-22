@@ -44,8 +44,8 @@ CMap.force = function (map){
 		calcForce = defaultFor(calcForce,false);
 		if( calcForce )
 		{
-			planarmap.nodes().forEach(function(n){
-				if( force in n )
+			CMap.forEachVertex(planarmap,function(n){
+				if( "force" in n )
 				{
 					n.force.x = 0;
 					n.force.y = 0;
@@ -126,7 +126,7 @@ CMap.force = function (map){
 			var scale = repulsionPower * energy / distdiff;
 			var lton = [ n.pos.minus(l[0].pos).normalize(),
 						 n.pos.minus(l[1].pos).normalize() ];
-			var l0tol1 = l[1].pos.minus(l[0]).normalize();
+			var l0tol1 = l[1].pos.minus(l[0].pos).normalize();
 			n.force.addVec( lton[0].plus(lton[1]).mult(scale) );
 			l[0].force.subVec( lton[0].minus(l0tol1).mult(scale) );
 			l[1].force.subVec( lton[1].plus(l0tol1).mult(scale) );
@@ -198,7 +198,7 @@ CMap.force = function (map){
     	var energy = force.energy(true);
     	var gradSq = 0;
     	var maxForce = 0;
-		planarmap.nodes().forEach(function(n){
+		CMap.forEachVertex(planarmap,function(n){
 			n.oldpos = n.pos.copy();
 			gradSq += n.force.normSq();
 			maxForce=Math.max(maxForce,n.force.normSq());
@@ -217,7 +217,7 @@ CMap.force = function (map){
 			var done = false;
 			var maxsteps = 50;
 			while( maxsteps > 0 && !done ) {
-				planarmap.nodes().forEach(function(n){
+				CMap.forEachVertex(planarmap,function(n){
 					n.pos = n.oldpos.copy().addVec(n.force.copy().mult(stepsize));
 				});
 				if( CMap.planarMapIsNonSimple(planarmap) )
