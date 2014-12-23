@@ -108,9 +108,9 @@ CMap.LayoutUpdater = function() {
 				// the node at which oredge starts
 				// is a bivalent node
 				var v = CMap.getVerticesOnEdge(nextEdge);
-				oredge.end().pos = v[0].copy().addVec(
-					v[0].copy().subVec(v[1]).normalize()
-					.mult(this.targetLinkLength));
+				oredge.end().pos = v[0].pos.plus(
+					v[0].pos.minus(v[1].pos).normalize()
+					.mult(targetLinkLength));
 			}else
 			{
 				var vprev = CMap.getVerticesOnEdge(prevEdge);
@@ -130,9 +130,9 @@ CMap.LayoutUpdater = function() {
 		"insertDiagonal":
 		function(edge){
 			var coorleft = CMap.getFacePolygon(edge.left,edge.getOriented())
-				.map(function(v){return v.pos;}).splice(0,1);
+				.map(function(v){return v.pos;}).slice(1);
 			var coorright = CMap.getFacePolygon(edge.right,edge.getOriented(true))
-				.map(function(v){return v.pos;}).splice(0,1);
+				.map(function(v){return v.pos;}).slice(1);
 			var pol = coorleft.concat(coorright);
 			if( !(edge.left.layout.outer || edge.right.layout.outer) )
 			{
@@ -145,18 +145,18 @@ CMap.LayoutUpdater = function() {
 					edge.layout.vert = CMap.findPathOutsidePolygon(pol,[coorleft.length,0])
 						.map(function(p){return new CMap.AuxiliaryVertex(p)});
 				}
+				if( CMap.faceExteriorAngle(edge.left) < 0 )
+				{
+					// edge.left is the outer face
+					edge.left.layout.outer = true;
+					edge.right.layout.outer = false;
+				} else
+				{
+					// edge.right is the outer face
+					edge.left.layout.outer = false;
+					edge.right.layout.outer = true;
+				}	
 			}
-			if( CMap.faceExteriorAngle(edge.left) < 0 )
-			{
-				// edge.left is the outer face
-				edge.left.layout.outer = true;
-				edge.right.layout.outer = false;
-			} else
-			{
-				// edge.right is the outer face
-				edge.left.layout.outer = false;
-				edge.right.layout.outer = true;
-			}		
 		}
 	};		
 	updater.registerAll = function(planarmap){

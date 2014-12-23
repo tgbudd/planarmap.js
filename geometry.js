@@ -420,11 +420,14 @@ CMap.polygonIsSimple = function(pol,outer){
 	for(var i=0;i<pol.length;i++)
 	{
 		var segment = {p: pol[i], p2: pol[(i+1)%pol.length] };
-		segment.left = segment.p.x <= segment.p2.x;
+		segment.left = (segment.p.x == segment.p2.x ? 
+			segment.p.y <= segment.p2.y : segment.p.x <= segment.p2.x);
 		eventQueue.push(segment);
 		eventQueue.push({p:segment.p2,p2:segment.p,left:!segment.left});
 	}
-	eventQueue.sort(function(a,b){ return (a.p==b.p? a.p2.x-b.p2.x : a.p.x-b.p.x); });
+	eventQueue.sort(function(a,b){ return (a.p==b.p? 
+		(a.p2==b.p2 ? (a.left ? -1 : 1 ) : a.p2.x-b.p2.x)
+		 : (a.p.x==b.p.x? a.p.y - b.p.y : a.p.x-b.p.x)); });
 	for(var i=0;i<eventQueue.length-1;i++)
 	{
 		if( eventQueue[i+1].p == eventQueue[i].p && 
@@ -438,9 +441,17 @@ CMap.polygonIsSimple = function(pol,outer){
 	return eventQueue.every(function(e){
 		if( e.left )
 		{
+			// Find the first segment in sweepLine that is above e.p
 			var position = 0;
-			if( sweepLine.some(function(s,i){ position=i; return (s.p == e.p ? 
-					(s.p2.y - s.p.y)*(e.p2.x-e.p.x) >= (e.p2.y - e.p.y)*(s.p2.x-s.p.x) : s.p.y >= e.p.y); }) ) {
+			if( sweepLine.some(function(s,i){ 
+					position=i; 
+					if( s.p == e.p )
+					{
+						// same starting point: check slopes
+						return (s.p2.y - s.p.y)*(e.p2.x-e.p.x) >= (e.p2.y - e.p.y)*(s.p2.x-s.p.x)
+					}
+					return (s.p2.y - s.p.y) * (e.p.x-s.p.x) > (e.p.y - s.p.y) * (s.p2.x - s.p.x);  
+				}) ) {
 				sweepLine.splice(position,0,e);
 			} else
 			{
@@ -455,7 +466,7 @@ CMap.polygonIsSimple = function(pol,outer){
 		} else
 		{
 			var position = 0;
-			sweepLine.some(function(s,i){ position=i; return s.link == e.link; });
+			sweepLine.some(function(s,i){ position=i; return s.p == e.p2 && s.p2 == e.p; });
 			sweepLine.splice(position,1);
 			if( position > 0 && position < sweepLine.length &&
 				CMap.segmentsIntersect( [sweepLine[position].p,sweepLine[position].p2], 

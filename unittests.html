@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Planar map unit tests</title>
+ 
+  <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.16.0.css">
+  <script src="http://code.jquery.com/qunit/qunit-1.16.0.js"></script>
+  <script src="geometry.js"></script>
+  <script src="planarmap.js"></script>
+  <script src="layout.js"></script>
+  <script src="force.js"></script>
+ 
+  <script>
+	function tovec(arr){
+		return arr.map(function(a){return new Vec2(a[0],a[1]);});
+	}
+
+	QUnit.test("segments intersect", function( assert ) {
+		var zero = new Vec2(0,0);
+		assert.ok( CMap.segmentsIntersect( 
+			tovec([[0,0],[0,1]]),tovec([[-0.5,0.5],[0.5,0.5]])), "cross");
+		assert.ok( CMap.segmentsIntersect( 
+			tovec([[-0.5,0.5],[0.5,0.5]]),tovec([[0,0],[0,1]])), "cross");
+		assert.ok( CMap.segmentsIntersect( 
+			tovec([[0,0],[0,1]]),tovec([[-0.5,-2],[0.5,3]])), "cross");
+		assert.ok( !CMap.segmentsIntersect( 
+			[zero,new Vec2(0,1)],[zero,new Vec2(1,0)]), "cross");			
+		assert.ok( CMap.segmentsIntersect( 
+			[zero,new Vec2(0,1)],[zero,new Vec2(1,0)],false), "cross");	
+		assert.ok( CMap.segmentsIntersect( 
+			tovec([[1,0],[1,1]]),tovec([[0,0],[1.1,0.2]])), "cross");
+	});
+	  
+	QUnit.test("simple polygon", function( assert ) {
+
+		var x = tovec([[0,0],[1,0],[1,1],[0,1],[0.5,0.5]]);
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3]]), "square" );
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0],x[4]]), "square plus segment" );
+		assert.ok( 0.1 > Math.abs(4*Math.PI - CMap.polygonAngleSum(
+			[x[0],x[1],x[2],x[3],x[0], new Vec2(1.1,0.2)])), "square plus segment angle" );
+		assert.ok( !CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0], new Vec2(1.1,0.2)]), "square plus segment" );
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0], new Vec2(0.9,0.2)]), "square plus segment" );
+		
+		x = tovec([[0.03,0.01],[0.96,0.02],[1.02,1.032],[0.021,1.01],[0.52,0.51]]);
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3]]), "square" );
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0],x[4]]), "square plus segment" );
+		assert.ok( !CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0], new Vec2(1.3,0.2)]), "square plus segment" );
+		assert.ok( CMap.polygonIsSimple(
+			[x[0],x[1],x[2],x[3],x[0], new Vec2(0.8,0.2)]), "square plus segment" );
+		
+		var y = tovec([[-0.8399323073518283,0.1289586487998924],
+				 [0.43476848498233217,0.4425117502095681],
+				 [-0.8399323073518283,0.1289586487998924],
+				 [1.0489092147622052,-0.33013568649406977],
+				 [2.3381630042931976,0.9676653895547318],
+				 [1.0489092147622052,-0.33013568649406977],
+				 [0.7880086818340923,-1.952471051677957],
+				 [2.205995756042531,-0.5275820799283167],
+				 [0.7332260652834729,1.3849010716767796]]);
+		assert.ok( !CMap.polygonIsSimple(
+			[y[0],y[1],y[0],y[3],y[4],y[3],y[6],y[7],y[8]]), "counterexample");
+	});
+  </script>
+</head>
+<body>
+ 
+<div id="qunit"></div>
+ 
+</body>
+</html>

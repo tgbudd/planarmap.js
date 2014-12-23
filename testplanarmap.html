@@ -91,10 +91,81 @@ var planarmap = CMap.PlanarMap();
 var layoutupdater = CMap.LayoutUpdater()
 	.registerAll(planarmap);
 planarmap.singleEdgeMap();
-var thisedge = planarmap.insertDiagonal(planarmap.faces().get("face0"),[0,1]);
-planarmap.insertEdgeNextTo(thisedge.getOriented());
-planarmap.insertEdgeNextTo(thisedge.getOriented(true));
+console.assert(planarmap.checkIncidence(),"Incidence error");
+console.assert(!CMap.planarMapIsNonSimple(planarmap),"non-simple");
+function check(){
+	console.assert(planarmap.checkIncidence(),"Incidence error");
+	console.assert(!CMap.planarMapIsNonSimple(planarmap),"non-simple");
+	updateFaceLayer();
+	updateEdgeLayer();
+	updateNodeLayer();
+}
+function randomInteger(min,max) {
+	return Math.floor(Math.random() * (max-min+1))+min;
+}
 
+setInterval(function(){
+	if( Math.random() > 0.3 )
+	{
+		planarmap.insertEdgeNextTo(
+			planarmap.edges().random().getOriented( Math.random() < 0.5 ) );
+	} else
+	{
+		var face = planarmap.edges().random().left;
+		var index1 = randomInteger(0,face.edges.length-1);
+		var index2 = randomInteger(0,face.edges.length-1);	
+		while( index2 == index1 )
+		{
+			index2 = randomInteger(0,face.edges.length-1);	
+		}
+		planarmap.insertDiagonal(face,[index1,index2]);	
+	}
+	check();
+	return false;
+},1000);
+
+var thisedge;
+/*d3.timer(function(){
+	thisedge = planarmap.insertDiagonal(planarmap.faces().get("face0"),[0,1]);
+	check();
+	return true;
+},1000);
+d3.timer(function(){
+	planarmap.insertEdgeNextTo(thisedge.getOriented());
+	check();
+	return true;
+},2000);
+d3.timer(function(){
+	planarmap.insertEdgeNextTo(thisedge.getOriented(true));
+	check();
+	return true;
+},3000);
+d3.timer(function(){
+	planarmap.insertEdgeNextTo(thisedge.getOriented(true));
+	check();
+	return true;
+},4000);
+var extedge;
+d3.timer(function(){
+	extedge = planarmap.insertEdgeNextTo(thisedge.getOriented(true).next());
+	check();
+	return true;
+},5000);
+d3.timer(function(){
+	planarmap.insertEdgeNextTo(extedge.getOriented(true));
+	check();
+	return true;
+},6000);
+d3.timer(function(){
+	planarmap.insertDiagonal(planarmap.faces().get("face1"),[2,6]);
+	check();
+	return true;
+},7000);
+d3.timer(function(){
+	planarmap.insertDiagonal(planarmap.faces().get("face0"),[0,3]);
+	check();
+	return true;
+},7000);*/
 
 var helplines = [];
 var corners = [];
@@ -178,11 +249,11 @@ var segmentStartCorner = {};
 
 function updateFaceLayer()
 {
-	var facePolygons = faceLayer.selectAll("polygon")
+	var facePolygons = faceLayer.selectAll("path")
 		.data(planarmap.faces().array().filter(function(f) { return !f.layout.outer; }),
 			function(f){ return f.uid; });
 	
-	facePolygons.enter().append("polygon")
+	facePolygons.enter().append("path")
 		.attr("fill","lightblue" )
 		.attr("stroke","")
 	//	.on("mouseout",function(d,i) { removeCorners(); d3.select(this).style("fill","white");})
@@ -599,12 +670,13 @@ function cornerPolygonPoints(corner)
 		return [scr.x,scr.y].join(","); }).join(" ");
 }
 */
-function roundCornerPath(path,radius)
+function roundCornerPath(path,radius,includeMoveTo)
 {
+	includeMoveTo = defaultFor(includeMoveTo,true);
 	function coorstr(p) { 
 		return p.x + " " + p.y;
 	}
-	var p = "M " + coorstr(path[0]);
+	var p = (includeMoveTo?"M " + coorstr(path[0]):"");
 	
 	for(var i=1;i<path.length-1;i++)
 	{
@@ -621,6 +693,7 @@ function roundCornerPath(path,radius)
 
 function updateMap()
 {
+	var cornersize = 0.5;
 	nodeLayer.selectAll("g.node").attr("transform", function(d){
 		return "translate(" + d.pos.x + "," + d.pos.y + ")";
    	});
@@ -629,7 +702,7 @@ function updateMap()
 		.attr("d", function(edge) {
 			var coor = CMap.getVerticesOnEdge(edge.getOriented(),true,true)
 				.map(function(v){return v.pos;});
-			return roundCornerPath(coor, 0.5);
+			return roundCornerPath(coor, cornersize);
 		});
 	
 	//cornerLayer.selectAll("polygon")
@@ -641,11 +714,16 @@ function updateMap()
 		.attr("x2", function(d) { return d.p2.x; })
 		.attr("y2", function(d) { return d.p2.y; });
 
-	faceLayer.selectAll("polygon")
-		.attr("points",function(d) {
-			return CMap.getFacePolygon(d)
-				.map(function(v){return v.pos.x + "," + v.pos.y;})
-				.join(" ");
+	faceLayer.selectAll("path")
+		.attr("d",function(d) {
+			var first = true;
+			return d.edges.map(function(edge){
+					var coor = CMap.getVerticesOnEdge(edge,true,true)
+						.map(function(v){return v.pos;});
+					var path = roundCornerPath(coor, cornersize, first);
+					first = false;
+					return path;
+				}).join(" ");
 			});
 
 }

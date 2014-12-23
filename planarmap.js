@@ -8,6 +8,11 @@ function arrayPairs(arr) {
 	return pairs;
 }
 
+function randomElement(arr)
+{
+	return arr[Math.floor(Math.random()*arr.length)];
+}
+
 var CMap = CMap || {};
 
 CMap.Face = function (){
@@ -155,6 +160,13 @@ CMap.Node.prototype.insertEdgeBefore = function(oldedge) {
 	for( var i=arguments.length-1;i>=1;i--)
 	{
 		this.edges.splice(index,0,arguments[i]);
+	}
+}
+CMap.Node.prototype.insertEdgeAfter = function(oldedge) {
+	var index = this.edgeIndex(oldedge);
+	for( var i=arguments.length-1;i>=1;i--)
+	{
+		this.edges.splice(index+1,0,arguments[i]);
 	}
 }
 CMap.Node.prototype.copy = function() {
@@ -320,6 +332,9 @@ CMap.UIdContainer = function (prefix){
 	container.size = function(){
 		return size;
 	}
+	container.random = function(){
+		return randomElement(container.array());
+	}
 	return container;
 }
 
@@ -387,7 +402,7 @@ CMap.PlanarMap = function (){
 		face.edges.push(edge.getOriented(false),edge.getOriented(true));
 		node1.edges.push(edge.getOriented(false));
 		node2.edges.push(edge.getOriented(true));
-		face.outer = true;
+		face.layout.outer = true;
 		outerface = face;
 
 		doOnChange("singleEdgeMap",function(f){f(edge);});
@@ -402,7 +417,7 @@ CMap.PlanarMap = function (){
 		var startnode = orientededge.start();
 		var edge = planarmap.newEdge(startnode,endnode,face,face);
 		endnode.edges.push(edge.getOriented(true));
-		startnode.insertEdgeBefore(orientededge,
+		startnode.insertEdgeAfter(orientededge,
 			edge.getOriented(false));
 		face.insertEdgeBefore(orientededge,
 			edge.getOriented(false),
@@ -415,9 +430,9 @@ CMap.PlanarMap = function (){
 			endnode = face.edges[indices[1]].start();
 		var newface = planarmap.newFace();
 		var edge = planarmap.newEdge(startnode,endnode,face,newface);
-		startnode.insertEdgeBefore(face.edges[indices[0]],
+		startnode.insertEdgeAfter(face.edges[indices[0]],
 			edge.getOriented(false));
-		endnode.insertEdgeBefore(face.edges[indices[1]],
+		endnode.insertEdgeAfter(face.edges[indices[1]],
 			edge.getOriented(true));
 		if( indices[0] <= indices[1] )
 		{
@@ -457,13 +472,22 @@ CMap.PlanarMap = function (){
 	}
 	planarmap.checkIncidence = function(){
 		if( !nodes.every(function(n){
-			return n.edges.every(function(e){return e.start() == n;});
+			return n.edges.every(function(e){
+				if( e.start() != n )
+				{
+					console.log( "node incidence error", e, n);
+				}
+				return e.start() == n;});
 		}))
 		{
 			return false;
 		}
 		if( !nodes.every(function(n){
 			return arrayPairs(n.edges).every(function(p){
+				if( p[0].left() != p[1].right())
+				{
+					console.log( "node error", n, p[0], p[1]);
+				}
 				return p[0].left() == p[1].right();
 			});
 		}))
@@ -471,13 +495,22 @@ CMap.PlanarMap = function (){
 			return false;
 		}
 		if( !faces.every(function(f){
-			return f.edges.every(function(e){return e.left() == f;});
+			return f.edges.every(function(e){
+				if( e.left() != f )
+				{
+					console.log( "face incidence error", e, f );
+				}
+				return e.left() == f;});
 		}))
 		{
 			return false;
 		}
 		if( !faces.every(function(f){
 			return arrayPairs(f.edges).every(function(p){
+				if(p[0].end() != p[1].start() )
+				{
+					console.log( "face error", f, p[0], p[1] );
+				}
 				return p[0].end() == p[1].start();
 			});
 		}))
