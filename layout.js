@@ -40,6 +40,20 @@ CMap.getVerticesOnEdge = function(orientededge,includefirst,includelast) {
 	}
 	return vert;
 }
+CMap.getTangent = function(orientededge) {
+	if( orientededge.edge.layout.vert.length = 0 )
+	{
+		return orientededge.end().pos.minus(orientededge.start().pos);
+	}
+	if( orientededge.reversed )
+	{
+		return orientededge.edge.layout.vert[
+			orientededge.edge.layout.vert.length-1].pos
+			.minus(orientededge.start().pos);	
+	}
+	return orientededge.edge.layout.vert[0].pos
+		.minus(orientededge.start().pos);	
+}
 CMap.getAuxiliaryVertices = function(planarmap){
 	return [].concat.apply([],
 		planarmap.edges().map(function(edge){
@@ -91,6 +105,22 @@ CMap.LayoutUpdater = function() {
 	var minAuxVertices = 0;
 	var shrinkFactor = 0.7;
 	
+	function angleSection(prev,center,next,n,r)
+	{
+		var angle = 2*Math.PI;
+		if( prev != next )
+		{
+			angle = next.minus(center).anglePos(prev.minus(center));
+		}
+		var radial = next.minus(center).normalize().mult(r);
+		var pt = [];
+		for(var i=0;i<n;i++)
+		{
+			pt.push( radial.copy().rotate((i+1)*angle/(n+1)).addVec(center) );
+		}
+		return pt;
+	}
+	
 	updater.updaters = {
 		"singleEdgeMap": 
 		function(edge){
@@ -103,23 +133,11 @@ CMap.LayoutUpdater = function() {
 		function(oredge){
 			var prevEdge = oredge.prev().reverse();
 			var nextEdge = oredge.next().next();
-			if( prevEdge.isEqual(nextEdge) )
-			{
-				// the node at which oredge starts
-				// is a bivalent node
-				var v = CMap.getVerticesOnEdge(nextEdge);
-				oredge.end().pos = v[0].pos.plus(
-					v[0].pos.minus(v[1].pos).normalize()
-					.mult(targetLinkLength));
-			}else
-			{
-				var vprev = CMap.getVerticesOnEdge(prevEdge);
-				var vnext = CMap.getVerticesOnEdge(nextEdge);
-				oredge.end().pos = vprev[0].pos.plus(
-					vnext[1].pos.minus(vnext[0].pos)
-					.getBisector(vprev[1].pos.minus(vprev[0].pos))
-					.mult(targetLinkLength));
-			}
+			var vprev = CMap.getVerticesOnEdge(prevEdge);
+			var vnext = CMap.getVerticesOnEdge(nextEdge);
+			oredge.end().pos = angleSection(
+				vprev[1].pos,vprev[0].pos,
+				vnext[1].pos,1,targetLinkLength)[0];			
 			while( CMap.faceIsNonSimple(oredge.left()) )
 			{
 				oredge.end().pos = oredge.start().pos.plus(
@@ -129,33 +147,55 @@ CMap.LayoutUpdater = function() {
 		},	
 		"insertDiagonal":
 		function(edge){
-			var coorleft = CMap.getFacePolygon(edge.left,edge.getOriented())
-				.map(function(v){return v.pos;}).slice(1);
-			var coorright = CMap.getFacePolygon(edge.right,edge.getOriented(true))
-				.map(function(v){return v.pos;}).slice(1);
-			var pol = coorleft.concat(coorright);
-			if( !(edge.left.layout.outer || edge.right.layout.outer) )
+			if( edge.right.edges.length == 1 )
 			{
-				edge.layout.vert = CMap.findPathInPolygon(pol,[coorleft.length,0])
-					.map(function(p){return new CMap.AuxiliaryVertex(p)});
+				// new edge is a loop
+				var prevEdge = edge.getOriented().prev().reverse();
+				var nextEdge = edge.getOriented().next();
+				var vprev = CMap.getVerticesOnEdge(prevEdge);
+				var vnext = CMap.getVerticesOnEdge(nextEdge);
+				var v = angleSection(
+					vprev[1].pos,vprev[0].pos,
+					vnext[1].pos,2,targetLinkLength);
+				edge.layout.vert = [new CMap.AuxiliaryVertex(v[1]),
+					new CMap.AuxiliaryVertex(v[0])];			
+				while( CMap.faceIsNonSimple(edge.left) )
+				{
+					edge.layout.vert.forEach(function(v){
+						v.pos.subVec(vprev[0].pos).mult(shrinkFactor)
+						.addVec(vprev[0].pos);
+					});
+				}				
 			} else
 			{
-				if( !CMap.isProperDiagonal(pol,[coorleft.length,0]) )
+				var coorleft = CMap.getFacePolygon(edge.left,edge.getOriented())
+					.map(function(v){return v.pos;}).slice(1);
+				var coorright = CMap.getFacePolygon(edge.right,edge.getOriented(true))
+					.map(function(v){return v.pos;}).slice(1);
+				var pol = coorleft.concat(coorright);
+				if( !(edge.left.layout.outer || edge.right.layout.outer) )
 				{
-					edge.layout.vert = CMap.findPathOutsidePolygon(pol,[coorleft.length,0])
+					edge.layout.vert = CMap.findPathInPolygon(pol,[coorleft.length,0])
 						.map(function(p){return new CMap.AuxiliaryVertex(p)});
-				}
-				if( CMap.faceExteriorAngle(edge.left) < 0 )
-				{
-					// edge.left is the outer face
-					edge.left.layout.outer = true;
-					edge.right.layout.outer = false;
 				} else
 				{
-					// edge.right is the outer face
-					edge.left.layout.outer = false;
-					edge.right.layout.outer = true;
-				}	
+					if( !CMap.isProperDiagonal(pol,[coorleft.length,0]) )
+					{
+						edge.layout.vert = CMap.findPathOutsidePolygon(pol,[coorleft.length,0])
+							.map(function(p){return new CMap.AuxiliaryVertex(p)});
+					}
+					if( CMap.faceExteriorAngle(edge.left) < 0 )
+					{
+						// edge.left is the outer face
+						edge.left.layout.outer = true;
+						edge.right.layout.outer = false;
+					} else
+					{
+						// edge.right is the outer face
+						edge.left.layout.outer = false;
+						edge.right.layout.outer = true;
+					}	
+				}
 			}
 		}
 	};		
