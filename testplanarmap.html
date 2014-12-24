@@ -105,6 +105,10 @@ function randomInteger(min,max) {
 }
 
 setInterval(function(){
+	if( planarmap.numEdges() > 20 )
+	{
+		planarmap.singleEdgeMap();
+	}
 	if( Math.random() > 0.3 )
 	{
 		planarmap.insertEdgeNextTo(
@@ -118,7 +122,7 @@ setInterval(function(){
 	}
 	check();
 	return false;
-},600);
+},300);
 
 var thisedge;
 /*d3.timer(function(){

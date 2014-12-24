@@ -56,6 +56,13 @@
 		assert.ok( CMap.polygonIsSimple(
 			[x[0],x[1],x[2],x[3],x[0], new Vec2(0.8,0.2)]), "square plus segment" );
 		
+		x = tovec([[-1,-0.5],[-1,0],[-1,0.5]]);
+		assert.ok( CMap.polygonIsSimple( [x[0],x[1],x[2],x[1]],true), "outer segment");
+		assert.ok( CMap.polygonIsSimple( [x[1],x[2],x[1],x[0]],true), "outer segment");
+		x = tovec([[-1,-0.5],[-1,0],[-1,0.5],[-1.5,-0.7],[-0.5,-0.7]]);
+		assert.ok( CMap.polygonIsSimple( [x[0],x[1],x[2],x[1],x[0],x[4],x[0],x[3]],true), "outer cross");
+		assert.ok( CMap.polygonIsSimple( [x[4],x[0],x[3],x[0],x[1],x[2],x[1],x[0]],true), "outer cross");
+		
 		var y = tovec([[-0.8399323073518283,0.1289586487998924],
 				 [0.43476848498233217,0.4425117502095681],
 				 [-0.8399323073518283,0.1289586487998924],

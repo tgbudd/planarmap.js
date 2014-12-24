@@ -426,7 +426,8 @@ CMap.polygonIsSimple = function(pol,outer){
 		eventQueue.push({p:segment.p2,p2:segment.p,left:!segment.left});
 	}
 	eventQueue.sort(function(a,b){ return (a.p==b.p? 
-		(a.p2==b.p2 ? (a.left ? -1 : 1 ) : a.p2.x-b.p2.x)
+		(a.p2==b.p2 ? (a.left ? -1 : 1 ) : 
+		(a.p2.x==b.p2.x ? a.p2.y-b.p2.y : a.p2.x-b.p2.x ))
 		 : (a.p.x==b.p.x? a.p.y - b.p.y : a.p.x-b.p.x)); });
 	for(var i=0;i<eventQueue.length-1;i++)
 	{

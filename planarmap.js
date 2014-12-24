@@ -254,7 +254,7 @@ CMap.UIdContainer = function (prefix){
 		{
 			uid = entry.uid;
 		}
-		if( uid in data )
+		if( "uid" in data )
 		{
 			if( clearfirst && clear in data[uid] )
 			{
@@ -279,7 +279,7 @@ CMap.UIdContainer = function (prefix){
 	container.clear = function(clearfirst){
 		clearfirst = defaultFor(clearfirst,true);
 		for( var uid in data ){
-			if( clear in data[uid] )
+			if( "clear" in data[uid] )
 			{
 				data[uid].clear();
 			}
