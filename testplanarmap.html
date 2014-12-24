@@ -122,7 +122,7 @@ setInterval(function(){
 	}
 	check();
 	return false;
-},1000);
+},600);
 
 var thisedge;
 /*d3.timer(function(){
@@ -166,6 +166,10 @@ d3.timer(function(){
 	check();
 	return true;
 },7000);*/
+
+function mirrorY(pt){
+	return new Vec2(pt.x,-pt.y);
+}
 
 var helplines = [];
 var corners = [];
@@ -338,14 +342,14 @@ function dragstart(d)
 	force.dragforce().node = d;
 	
 	var p = d3.mouse(d3.select("#zoomgroup").node());
-	force.dragforce().cursor = new Vec2(p[0],p[1]);
+	force.dragforce().cursor = new Vec2(p[0],-p[1]);
 
 	force.resume();
 }
 function dragmove(d)
 {
 	var p = d3.mouse(d3.select("#zoomgroup").node());
-	force.dragforce().cursor = new Vec2(p[0],p[1]);
+	force.dragforce().cursor = new Vec2(p[0],-p[1]);
 	force.resume();
 }
 function dragend(d)
@@ -674,7 +678,7 @@ function roundCornerPath(path,radius,includeMoveTo)
 {
 	includeMoveTo = defaultFor(includeMoveTo,true);
 	function coorstr(p) { 
-		return p.x + " " + p.y;
+		return p.x + " " + (-p.y);
 	}
 	var p = (includeMoveTo?"M " + coorstr(path[0]):"");
 	
@@ -695,7 +699,7 @@ function updateMap()
 {
 	var cornersize = 0.5;
 	nodeLayer.selectAll("g.node").attr("transform", function(d){
-		return "translate(" + d.pos.x + "," + d.pos.y + ")";
+		return "translate(" + d.pos.x + "," + (-d.pos.y) + ")";
    	});
 
 	edgeLayer.selectAll("path")
@@ -710,9 +714,9 @@ function updateMap()
 	
 	helpLineLayer.selectAll("line")
 		.attr("x1", function(d) { return d.p1.x; })
-		.attr("y1", function(d) { return d.p1.y; })
+		.attr("y1", function(d) { return -d.p1.y; })
 		.attr("x2", function(d) { return d.p2.x; })
-		.attr("y2", function(d) { return d.p2.y; });
+		.attr("y2", function(d) { return -d.p2.y; });
 
 	faceLayer.selectAll("path")
 		.attr("d",function(d) {

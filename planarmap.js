@@ -443,9 +443,9 @@ CMap.PlanarMap = function (){
 		}else
 		{
 			newface.edges = face.edges.splice(indices[0],
-				face.edges.length - indices[0] + 1)
+				face.edges.length - indices[0])
 				.concat(face.edges.splice(0,indices[1]));
-			face.edges.splice(indices[1],0,edge.getOriented());
+			face.edges.push(edge.getOriented());
 			newface.edges.push(edge.getOriented(true));			
 		}
 		newface.edges.forEach(function(e){
