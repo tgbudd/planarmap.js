@@ -3,6 +3,7 @@ function defaultFor(arg, val) { return typeof arg !== 'undefined' ? arg : val; }
 var CMap = CMap || {};
 
 CMap.force = function (map){
+	"use strict";
 	var force = {};
 	var event = d3.dispatch("start","tick","end");
 	//var drag;
@@ -12,6 +13,7 @@ CMap.force = function (map){
 	var springCoupling = 2.0;
 	var controlParam = 0.4;
 	var dragforce = {drag: false, coupling: 10};
+	var stretchforce = {stretch: true, coupling: 0, power: 1.25};
 	var running = false;
 	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
 	
@@ -40,6 +42,11 @@ CMap.force = function (map){
 		centerPull = x;
 		return force;	
 	};
+	force.stretchForce = function(x) {
+		if (!arguments.length) return stretchforce;
+		stretchforce = x;
+		return force;	
+	};
 	force.energy = function(calcForce) {
 		calcForce = defaultFor(calcForce,false);
 		if( calcForce )
@@ -61,8 +68,46 @@ CMap.force = function (map){
 		energy += springForce(calcForce);
 		energy += centerPullForce(calcForce);
 		energy += dragForce(calcForce);
+		energy += stretchForce(calcForce);
     	return energy;
 	};
+	function stretchForce(calcForce) {
+		if( !stretchforce.stretch || stretchforce.coupling <= 0)
+		{
+			return 0;
+		}
+		return planarmap.edges().total(function(e){
+			return stretchForceEdge(e,calcForce);
+		});
+	}
+	function stretchForceEdge(e,calcForce) {
+		var energy = 0;
+		var prev = e.start;
+		e.layout.vert.forEach(function(v,i){
+			var next = (i==e.layout.vert.length-1 ? e.end : e.layout.vert[i+1]);
+			energy += stretchForceVertices(prev,v,next);
+			prev = v;
+		});
+		return energy;
+	}
+	function stretchForceVertices(prev,v,next){
+		var bendangle = next.pos.minus(v.pos)
+			.angle(v.pos.minus(prev.pos));
+		var energy = stretchforce.coupling *
+			Math.pow(Math.abs(bendangle),stretchforce.power);
+		if( Math.abs(bendangle) > 0.01 )
+		{
+			var scale = - stretchforce.power * energy / bendangle;
+			var forcevec1 = prev.pos.minus(v.pos).rotate90()
+				.mult(scale/prev.pos.minus(v.pos).normSq());
+			var forcevec2 = next.pos.minus(v.pos).rotate90()
+				.mult(scale/next.pos.minus(v.pos).normSq());
+			prev.force.addVec(forcevec1);
+			v.force.subVec(forcevec1).addVec(forcevec2);
+			next.force.subVec(forcevec2);				
+		}
+		return energy;
+	}
 	function dragForce(calcForce) {
 		if( !dragforce.drag )
 		{
@@ -204,9 +249,10 @@ CMap.force = function (map){
 			maxForce=Math.max(maxForce,n.force.normSq());
 		});
 		maxForce = Math.sqrt(maxForce);
+		var maxDisplacement = 0.1;
 		if( maxForce > 0 )
 		{
-			stepsize = Math.min(stepsize,0.1/maxForce);
+			stepsize = Math.min(stepsize,2.0/maxForce);
 		}
 		if( gradSq / planarmap.numNodes() < 0.002 )
 		{
@@ -217,9 +263,20 @@ CMap.force = function (map){
 			var done = false;
 			var maxsteps = 50;
 			while( maxsteps > 0 && !done ) {
+				var countmax = 0;
 				CMap.forEachVertex(planarmap,function(n){
-					n.pos = n.oldpos.copy().addVec(n.force.copy().mult(stepsize));
+					var displ = n.force.copy().mult(stepsize);
+					if( displ.normSq() > maxDisplacement*maxDisplacement )
+					{
+						displ.normalize().mult(maxDisplacement);
+						countmax++;
+					}
+					n.pos = n.oldpos.plus(displ);
 				});
+				if( countmax > 0 )
+				{
+					//console.log(countmax);
+				}
 				if( CMap.planarMapIsNonSimple(planarmap) )
 				{
 					stepsize *= 0.5;
@@ -237,6 +294,10 @@ CMap.force = function (map){
 						maxsteps--;
 					}
 				}
+			}
+			if( maxsteps == 0 )
+			{
+				console.log("max steps");
 			}
 		}
     	event.tick({type: "tick"});

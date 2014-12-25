@@ -2,6 +2,7 @@ var CMap = CMap || {};
 
 CMap.AuxiliaryVertex = function(vec) {
 	this.pos = vec;
+	this.attemptremoval = false;
 }
 CMap.AuxiliaryVertex.prototype.copy = function() {
 	return new CMap.AuxiliaryVertex(this.pos);

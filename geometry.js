@@ -5,22 +5,27 @@ var Vec2 = function(x,y)
 };
 
 Vec2.prototype.addVec = function(vec){ 
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	this.x += vec.x; 
 	this.y += vec.y; 
 	return this; 
 };
 Vec2.prototype.plus = function(vec){
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return new Vec2(this.x+vec.x,this.y+vec.y);
 }
 Vec2.prototype.subVec = function(vec){ 
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	this.x -= vec.x; 
 	this.y -= vec.y; 
 	return this; 
 };
 Vec2.prototype.minus = function(vec){
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return new Vec2(this.x-vec.x,this.y-vec.y);
 }
 Vec2.prototype.distance = function(vec){
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return this.minus(vec).norm();
 }
 Vec2.prototype.mult = function(r) { 
@@ -32,17 +37,21 @@ Vec2.prototype.divide = function(r) {
 	return this.mult(1/r); 
 };
 Vec2.prototype.dot = function(vec) { 
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return (this.x*vec.x+this.y*vec.y); 
 };
 Vec2.prototype.cross = function(vec) { 
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return (this.x*vec.y-this.y*vec.x); 
 };
 Vec2.prototype.angle = function(vec) {
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	// Returns the angle (between -PI and PI) this has to be rotated in
 	// counterclockwise direction to align it with vec_. 
 	return Math.atan2(this.cross(vec),this.dot(vec));
 };
 Vec2.prototype.anglePos = function(vec) {
+	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	// Returns the angle (between 0 and 2 PI) this has to be rotated in
 	// counterclockwise direction to align it with vec_. 
 	var angle = this.angle(vec);
@@ -53,6 +62,12 @@ Vec2.prototype.rotate = function(angle) {
 	var sine = Math.sin(angle);
 	var tmpx = cosine * this.x - sine * this.y;
 	this.y = sine * this.x + cosine * this.y;
+	this.x = tmpx;
+	return this;	
+};
+Vec2.prototype.rotate90 = function() { 
+	var tmpx = - this.y;
+	this.y = this.x;
 	this.x = tmpx;
 	return this;	
 };
@@ -222,9 +237,15 @@ CMap.pointInPolygon = function(coor,pt){
 	return Math.abs(angle - 2*Math.PI) < 0.001;
 }
 
-CMap.segmentInPolygon = function(coor,line,checkinpolygon){
+CMap.segmentInPolygon = function(coor,line,checkinpolygon,mindist){
 	checkinpolygon = defaultFor(checkinpolygon,true);
+	mindist = defaultFor(mindist,0.001);
 	
+	if( coor.some(function(c){
+			return c != line[0] && c != line[1]	&& CMap.pointSegmentDistance(c,line) < mindist;
+		}) ) {
+		return false;
+	}
 	if( checkinpolygon && (!pointInPolygon(coor,line[0]) || !pointInPolygon(coor,line[1])) )
 	{
 		return false;
