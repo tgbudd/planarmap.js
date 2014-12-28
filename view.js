@@ -63,14 +63,11 @@ CMap.View = function(map,targetsvg) {
 			.data(planarmap.faces().array().filter(function(f) { return !f.layout.outer; }),
 			function(f){ return f.uid; });
 	
-		var newfaces = facePaths.enter().append("path")
-			.attr("class",function(f){ 
-				if( "class" in f ){
-					return f.class.join(" ");
-				} else
-					return "face";
-			});
-		
+		var newfaces = facePaths.enter().append("path");
+		facePaths.each(function(f){
+			d3.select(this).classed(f.class);
+		});
+				
 		view.updateFacePositions(newfaces);		
 		
 		facePaths.exit().remove();
@@ -82,13 +79,10 @@ CMap.View = function(map,targetsvg) {
 			.data(planarmap.edges().array(),
 				function(e){return e.uid;});
 			
-		var newedges = edgePaths.enter().append("path")
-			.attr("class",function(e){ 
-				if( "class" in e ){
-					return e.class.join(" ");
-				} else
-					return "edge";
-			});
+		var newedges = edgePaths.enter().append("path");
+		edgePaths.each(function(e){
+			d3.select(this).classed(e.class);
+		});
 		
 		view.updateEdgePositions(newedges);
 		
@@ -107,14 +101,12 @@ CMap.View = function(map,targetsvg) {
 			.attr("class","node");
 			
 		newNodeGroups.append("circle")
-			.attr("class",function(n){ 
-				if( "class" in n ){
-					return n.class.join(" ");
-				} else
-					return "node";
-			})
 			.attr("r","0.1");
 
+		nodeGroups.select("circle").each(function(n){ 
+			d3.select(this).classed(n.class);
+		});
+		
 		newNodeGroups.append("text")
 			.attr("dx",0.14)
 			.attr("dy",-0.1)

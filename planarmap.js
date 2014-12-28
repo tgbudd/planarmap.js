@@ -22,6 +22,7 @@ CMap.Face = function (){
 	this.edges = [];
 	this.attr = {};
 	this.layout = {};
+	this.class = {"face":true};
 }
 CMap.Face.prototype.clear = function() {
 	while(this.edges.length > 0){
@@ -137,6 +138,7 @@ CMap.Node = function (){
 	// for which e.start == this in ccw order.
 	this.edges = [];
 	this.attr = {};
+	this.class = {"node":true};
 	this.pos = new Vec2(0,0);
 }
 CMap.Node.prototype.clear = function(){
@@ -196,6 +198,7 @@ CMap.Edge = function (start,end,left,right){
 	this.right = right;
 	this.attr = {};
 	this.layout = {vert: []};
+	this.class = {"edge":true};
 }
 CMap.Edge.prototype.clear = function(){
 	this.start = null;
