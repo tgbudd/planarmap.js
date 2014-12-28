@@ -49,6 +49,7 @@ CMap.View = function(map,targetsvg) {
 		{
 			svg.on(".zoom", null);
 		}
+		return view;
 	}
 	
 	view.updateLayers = function(){

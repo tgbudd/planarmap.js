@@ -425,7 +425,14 @@ CMap.PlanarMap = function (){
 		doOnChange("insertEdgeNextTo",function(f){f(edge.getOriented());});
 		return edge;
 	}
-	planarmap.insertDiagonal = function(face,indices){
+	planarmap.insertDiagonal = function(face,corners,comments){
+		var indices = corners.map(function(ind){
+			if( ind instanceof CMap.OrientedEdge )
+			{
+				return face.edgeIndex(ind);
+			}
+			return ind;
+		});
 		var startnode = face.edges[indices[0]].start(),
 			endnode = face.edges[indices[1]].start();
 		var newface = planarmap.newFace();
@@ -451,7 +458,7 @@ CMap.PlanarMap = function (){
 		newface.edges.forEach(function(e){
 			e.left(newface);
 		});
-		doOnChange("insertDiagonal",function(f){f(edge);});
+		doOnChange("insertDiagonal",function(f){f(edge,comments);});
 		return edge;
 	}
 	planarmap.splitEdge = function(orientededge){

@@ -16,6 +16,7 @@ CMap.force = function (map){
 	var stretchforce = {stretch: true, coupling: 0, power: 1.25};
 	var running = false;
 	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
+	var minForceSq = 0;
 	
 	force.repulsionPower = function(x) {
 		if (!arguments.length) return repulsionPower;
@@ -254,7 +255,7 @@ CMap.force = function (map){
 		{
 			stepsize = Math.min(stepsize,2.0/maxForce);
 		}
-		if( gradSq / planarmap.numNodes() < 0.002 )
+		if( gradSq / planarmap.numNodes() < minForceSq )
 		{
 			force.stop();
 			return true;

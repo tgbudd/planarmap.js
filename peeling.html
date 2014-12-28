@@ -1,0 +1,174 @@
+
+<html>
+<head>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+#pmap {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+svg path.edge {
+	stroke: #905070;
+	stroke-width: 0.05;
+	fill: none;
+}
+svg path.face {
+	stroke: node;
+	fill: #c0c0ff;
+}
+svg path.babyuniverse {
+	fill: #a0a0a0;
+}
+svg text.label {
+	pointer-events: none;
+	font-family: Verdana;
+	font-size: 0.3;
+}
+svg circle.node {
+	fill: red;
+}
+</style>
+</head>
+<body>
+<div id="pmap">
+</div>
+
+<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
+<script src="geometry.js"></script>
+<script src="layout.js"></script>
+<script src="force.js"></script>
+<script src="planarmap.js"></script>
+<script src="view.js"></script>
+<script>
+var svg = d3.select("#pmap").append("svg")
+	.attr("id","pmapsvg")
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-8 -5 16 10")
+	.attr("preserveAspectRatio", "xMidYMid meet")	
+	
+var planarmap = CMap.PlanarMap();
+var layoutupdater = CMap.LayoutUpdater()
+	.registerAll(planarmap);
+planarmap.singleEdgeMap();
+
+var view = CMap.View(planarmap,svg).zoom();
+
+var force = CMap.force(planarmap)
+	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
+	.on("tick",view.updatePositions)
+	.resume();
+	
+var peelEdge = planarmap.edges().random().getOriented(Math.random()<0.5);
+
+function computehfun(maxp){
+	var hfun = [0,0, 0.25 * Math.pow(3.0,-3.5) / Math.sqrt(Math.PI)];
+	for(var p = 3;p<=maxp;p++)
+	{
+		hfun.push( (2*p-3)*(2*p-4) * hfun[p-1] / (4*(p-2)*(p-2)) );
+	}
+	return hfun;
+}
+
+function computeprob(maxk){
+	var prob = { pos: [0,2.0/3], neg: [0,0.25] };
+	for( var k = 2; k <= maxk; k++)
+	{
+		prob.neg.push( (2*k-3)/(2*(k+1)) * prob.neg[k-1] );
+	}
+	return prob;
+}
+
+function randomLengthChange(l,hfun,prob)
+{
+	var cumul = Math.random();
+	var k=prob.pos.length-1;
+	if( prob.pos.some(function(p,i){
+		cumul -= p * hfun[l+i]/hfun[l];
+		if( cumul <= 0 ) { k=i; }
+		return cumul <= 0;
+	}) ) {
+		return k;
+	}
+	prob.neg.some(function(p,i){
+		if( l - i < 0 || hfun[l-i] <= 0 ) return false;
+		cumul -= p * hfun[l-i]/hfun[l];
+		if( cumul <= 0 ) { k=-i; }
+		return cumul <= 0;
+	});
+	return k;
+}
+
+function totalprob(l,hfun,prob)
+{
+	var cumul = 0;
+	prob.pos.forEach(function(p,i){
+		cumul += p * hfun[l+i]/hfun[l];
+	});
+
+	prob.neg.forEach(function(p,i){
+		if( l - i >= 0 && hfun[l-i] > 0 ) 
+			cumul += p * hfun[l-i]/hfun[l];
+	});
+	return cumul;
+}
+
+var hfun = computehfun(80);
+var prob = computeprob(80);
+var boundaryLen = 2;
+
+setInterval(function(){
+	var k = randomLengthChange(boundaryLen,hfun,prob);
+	if( k == 1 ){
+		planarmap.insertEdgeNextTo(peelEdge.next());
+		peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+			[peelEdge,peelEdge.next().next()],
+			{"outer":"left"}).getOriented().next();
+	} else
+	{
+		if( Math.random() < 0.5 )
+		{
+			// baby universe swallowing -k edges
+			// to the left
+			var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
+				[peelEdge, (peelEdge.left().edgeIndex(peelEdge)
+				+ boundaryLen + k)%boundaryLen], {"outer":"right"});
+			peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+				[peelEdge.next(),innerEdge.getOriented(true)],
+				{"outer":"right"}).getOriented(true);
+			if( !("class" in innerEdge.left) ){
+				innerEdge.left.class = [];
+			}
+			innerEdge.left.class.push("babyuniverse");			
+		} else
+		{
+			// baby universe swallowing -k edges
+			// to the right
+			var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
+				[peelEdge.next(), (peelEdge.left().edgeIndex(peelEdge)
+				-k+1)%boundaryLen], {"outer":"left"});
+			peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+				[peelEdge,innerEdge.getOriented().next()],
+				{"outer":"left"}).getOriented();
+			if( !("class" in innerEdge.right) ){
+				innerEdge.right.class = [];
+			}
+			innerEdge.right.class.push("babyuniverse");		
+		}
+	}
+	boundaryLen += k;
+	console.assert( boundaryLen == peelEdge.left().edges.length );
+	view.updateLayers();
+},1000);
+
+</script>
+</body>
+</html>
+

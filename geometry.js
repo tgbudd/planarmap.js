@@ -336,7 +336,7 @@ CMap.findPathInPolygon = function(coor,cornerIds)
 	}
 	return path;
 }
-CMap.findPathOutsidePolygon = function(coor,cornerIds)
+CMap.findPathOutsidePolygon = function(coor,cornerIds,outerleft)
 {
 	// Construct a bounding box
 	var boundingbox = {min: new Vec2(-1,-1), max: new Vec2(1,1)};
@@ -394,9 +394,39 @@ CMap.findPathOutsidePolygon = function(coor,cornerIds)
 		box[2], box[2].copy().addVec(box[3]).mult(0.5),
 		box[3], box[3].copy().addVec(box[0]).mult(0.5),
 		box[0]);
-	return CMap.findPathInPolygon(newcoor,
-		[cornerIds[0] + (cornerIds[0] > index ? 10 : 0)
-		,cornerIds[1] + (cornerIds[1] > index ? 10 : 0)]);
+	
+	if( typeof outerleft !== 'boolean' )
+	{	
+		return CMap.findPathInPolygon(newcoor,
+			[cornerIds[0] + (cornerIds[0] > index ? 10 : 0)
+			,cornerIds[1] + (cornerIds[1] > index ? 10 : 0)]);
+	}
+	
+	// First find path to bounding box
+	var closestIndex;
+	var closestDist = 10000;
+	for(i=index+1;i<index+9;i++)
+	{
+		if( newcoor[i].distance(coor[cornerIds[0]]) < closestDist )
+		{
+			closestDist = newcoor[i].distance(coor[cornerIds[0]]);
+			closestIndex = i;
+		}
+	}
+	var infpath = CMap.findPathInPolygon(newcoor,
+			[cornerIds[0] + (cornerIds[0] > index ? 10 : 0)
+			,closestIndex]);
+	var newcoor2 = coor.slice(0,cornerIds[0]+1);
+	newcoor2 = newcoor2.concat(infpath);
+	newcoor2 = newcoor2.concat(newcoor.slice(closestIndex,index+9));
+	newcoor2 = newcoor2.concat(newcoor.slice(index+1,closestIndex+1));
+	newcoor2 = newcoor2.concat(infpath.slice().reverse());
+	newcoor2 = newcoor2.concat(coor.slice(cornerIds[0]));
+	var newCornerIds = [ outerleft ? 
+		cornerIds[0] + 2*infpath.length + 10 : cornerIds[0],
+		cornerIds[1] < cornerIds[0] ? cornerIds[1] :
+		cornerIds[1] + 2*infpath.length + 10 ];
+	return CMap.findPathInPolygon(newcoor2,newCornerIds);
 }
 
 CMap.polygonAngleSum = function(coor){
