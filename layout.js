@@ -209,6 +209,13 @@ CMap.LayoutUpdater = function() {
 					}	
 				}
 			}
+		},
+		"removeEdge":
+		function(data) {
+			if( !data.wasDangling && data.oldFace.layout.outer )
+			{
+				data.cornerEdge.left().layout.outer = true;
+			}
 		}
 	};		
 	updater.registerAll = function(planarmap){

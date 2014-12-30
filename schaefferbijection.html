@@ -1,0 +1,134 @@
+
+
+<html>
+<head>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+#pmap {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+svg path.quadedge {
+	stroke: #404040;
+	stroke-width: 0.05;
+	fill: none;
+}
+svg path.mapedge {
+	stroke: #d02020;
+	stroke-width: 0.07;
+	fill: none;
+}
+svg path.face {
+	stroke: node;
+	fill: white;
+}
+svg text.label {
+	pointer-events: none;
+	font-family: Verdana;
+	font-size: 0.3;
+}
+svg circle.node {
+	fill: #4040d0;
+}
+</style>
+</head>
+<body>
+<div id="pmap">
+</div>
+
+<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
+<script src="geometry.js"></script>
+<script src="layout.js"></script>
+<script src="force.js"></script>
+<script src="planarmap.js"></script>
+<script src="view.js"></script>
+<script src="algorithms.js"></script>
+<script>
+var svg = d3.select("#pmap").append("svg")
+	.attr("id","pmapsvg")
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-8 -5 16 10")
+	.attr("preserveAspectRatio", "xMidYMid meet")	
+	
+var planarmap = CMap.PlanarMap();
+var layoutupdater = CMap.LayoutUpdater()
+	.registerAll(planarmap);
+planarmap.singleEdgeMap();
+
+/*
+var startEdge = planarmap.edges().get("edge0").getOriented();
+var newEdge = planarmap.insertEdgeNextTo(startEdge).getOriented(true);
+var newEdge2 = planarmap.insertEdgeNextTo(newEdge).getOriented(true);
+var newEdge3 = planarmap.insertDiagonal(newEdge.left(),[startEdge.reverse(),newEdge2]).getOriented();
+var newEdge4 = planarmap.insertEdgeNextTo(newEdge.reverse()).getOriented(true);
+planarmap.insertDiagonal(startEdge.right(),[newEdge4,newEdge3.reverse()]);
+planarmap.edges().forEach(function(edge){
+	edge.class["quadedge"] = true;
+});
+CMap.graphDistance(planarmap,planarmap.nodes().random(),"distance");	
+*/
+var tree = CMap.growRandomTree(planarmap,
+	planarmap.edges().get("edge0").getOriented(),8);
+	
+var view = CMap.View(planarmap,svg).zoom();
+view.nodeText(function(node){
+	return node.attr.distance;
+}).updateLayers();
+
+var force = CMap.force(planarmap)
+	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
+	.on("tick",view.updatePositions)
+	.resume();
+
+
+
+var bijection;
+var invbijection;
+var curbijection = tree;
+
+
+
+d3.select("body").on("keydown",function(){
+	if( d3.event.keyCode == 32 ) // space
+	{
+		if( curbijection.done() )
+		{
+			if( curbijection == tree )
+			{
+				CMap.randomTreeLabeling(planarmap,"distance");
+			}
+			if( curbijection == bijection || curbijection == tree )
+			{
+				invbijection = CMap.inverseSchaefferBijection(planarmap,"distance");
+				curbijection = invbijection;
+			} else
+			{
+				bijection = CMap.SchaefferBijection(planarmap,"distance");
+				curbijection = bijection;				
+			}
+		}
+		curbijection.runNext();
+		planarmap.edges().forEach(function(edge){
+			if( curbijection == tree ){
+				edge.class[ "mapedge"] = true;
+			} else if( edge.attr.bijectionstatus == "new" )
+			{
+				edge.class[(curbijection==bijection?"mapedge":"quadedge")] = true;
+			}
+		});
+		view.updateLayers();
+	}
+});
+
+</script>
+</body>
+</html>
+

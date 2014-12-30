@@ -66,6 +66,14 @@ CMap.Face.prototype.updateReferences = function(dict) {
 		e.edge = dict[e.edge.uid];
 	});	
 }
+CMap.Face.prototype.removeEdge = function(orientededge) {
+	var index = this.edgeIndex(orientededge);
+	if( index == -1 )
+	{
+		throw "Edge not found";
+	}
+	this.edges.splice(index,1);
+}
 
 CMap.OrientedEdge = function(edge,reversed){
 	"use strict";
@@ -190,6 +198,14 @@ CMap.Node.prototype.updateReferences = function(dict) {
 		e.edge = dict[e.edge.uid];
 	});	
 }
+CMap.Node.prototype.removeEdge = function(orientededge) {
+	var index = this.edgeIndex(orientededge);
+	if( index == -1 )
+	{
+		throw "Edge not found";
+	}
+	this.edges.splice(index,1);
+}
 
 CMap.Edge = function (start,end,left,right){
 	this.start = start;
@@ -257,9 +273,9 @@ CMap.UIdContainer = function (prefix){
 		{
 			uid = entry.uid;
 		}
-		if( "uid" in data )
+		if( uid in data )
 		{
-			if( clearfirst && clear in data[uid] )
+			if( clearfirst && "clear" in data[uid] )
 			{
 				data[uid].clear();
 			}
@@ -479,6 +495,51 @@ CMap.PlanarMap = function (){
 			= newedge.getOriented(true);
 		doOnChange("splitEdge",function(f){f(newnode);});
 		return newnode;
+	}
+	planarmap.removeEdge = function(edge){
+		// Only allow if edge is dangling or if it separates
+		// two distinct faces
+		if( (edge.start.edges.length > 1 && edge.end.edges.length > 1
+			&& edge.left == edge.right) || planarmap.numEdges() == 1 )
+		{
+			throw "edge removal not allowed";
+		}
+		var data = {"cornerEdge": edge.getOriented(true).next()};
+		if( edge.left == edge.right )
+		{
+			// oriented edge pointing in dangling direction
+			var oredge = edge.getOriented(edge.start.edges.length == 1);
+			oredge.start().removeEdge(oredge);
+			oredge.left().removeEdge(oredge);
+			oredge.left().removeEdge(oredge.reverse());
+			planarmap.nodes().remove(oredge.end());
+			planarmap.edges().remove(edge);
+			data["wasDangling"] = true;
+		} else
+		{
+			// join faces
+			var leftface = edge.left;
+			var rightface = edge.right;
+			var leftindex = leftface.edgeIndex(edge.getOriented());
+			var rightindex = rightface.edgeIndex(edge.getOriented(true));
+			// remove references from nodes
+			edge.start.removeEdge(edge.getOriented());
+			edge.end.removeEdge(edge.getOriented(true));
+			// make leftface the left of the edges of rightface 
+			rightface.edges.forEach(function(e){
+				e.left(leftface)
+			});
+			// replace edge in leftface.edges by the edges in the right face
+			Array.prototype.splice.apply(leftface.edges,[leftindex,1]
+				.concat(rightface.edges.slice(rightindex+1))
+				.concat(rightface.edges.slice(0,rightindex)));
+			planarmap.faces().remove(rightface);
+			planarmap.edges().remove(edge);
+			data["wasDangling"] = false;
+			data["oldFace"] = rightface;
+		}
+		doOnChange("removeEdge",function(f){f(data);});
+		return planarmap;
 	}
 	planarmap.checkIncidence = function(){
 		if( !nodes.every(function(n){

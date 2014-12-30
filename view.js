@@ -16,7 +16,9 @@ CMap.View = function(map,targetsvg) {
 		nodeLayer;
 		
 	var cornersize = 0.5;
-	
+	var nodeTextFunction = function(node){
+		return node.uid.substring(4);
+	}
 
 	function init(){
 		svg.selectAll("*").remove();
@@ -35,6 +37,11 @@ CMap.View = function(map,targetsvg) {
 		nodeLayer = globalGroup.append("g").attr("class","nodeLayer");
 
 		view.updateLayers();
+	}
+	
+	view.nodeText = function(fun){
+		nodeTextFunction = fun;
+		return view;
 	}
 	
 	view.zoom = function(usezoom){
@@ -56,6 +63,7 @@ CMap.View = function(map,targetsvg) {
 		view.updateFaceLayer();
 		view.updateEdgeLayer();
 		view.updateNodeLayer();
+		return view;
 	}
 	
 	view.updateFaceLayer = function(){
@@ -71,6 +79,7 @@ CMap.View = function(map,targetsvg) {
 		view.updateFacePositions(newfaces);		
 		
 		facePaths.exit().remove();
+		return view;
 	}
 	
 
@@ -87,6 +96,7 @@ CMap.View = function(map,targetsvg) {
 		view.updateEdgePositions(newedges);
 		
 		edgePaths.exit().remove();
+		return view;
 	}
 	
 	
@@ -111,12 +121,16 @@ CMap.View = function(map,targetsvg) {
 			.attr("dx",0.14)
 			.attr("dy",-0.1)
 			.attr("class","label")
-			.style("text-anchor","start")
-			.text(function(d,i) {return i;});
+			.style("text-anchor","start");
+			
+		nodeGroups.select("text").each(function(n){
+			d3.select(this).text(nodeTextFunction(n));
+		});
 		
 		view.updateNodePositions(newNodeGroups);
 			
 		nodeGroups.exit().remove();
+		return view;
 	}
 	
 	function roundCornerPath(path,radius,includeMoveTo)
@@ -153,6 +167,7 @@ CMap.View = function(map,targetsvg) {
 					return path;
 				}).join(" ");
 			});
+		return view;
 	}
 	
 	view.updateEdgePositions = function(edges){
@@ -163,6 +178,7 @@ CMap.View = function(map,targetsvg) {
 					.map(function(v){return v.pos;});
 				return roundCornerPath(coor, cornersize);
 			});
+		return view;
 	}
 	
 	view.updateNodePositions = function(nodegroups){
@@ -170,12 +186,14 @@ CMap.View = function(map,targetsvg) {
 		nodegroups.attr("transform", function(d){
 			return "translate(" + d.pos.x + "," + (-d.pos.y) + ")";
 		});
+		return view;
 	}
 	
 	view.updatePositions = function(){
 		view.updateFacePositions();
 		view.updateEdgePositions();
 		view.updateNodePositions();
+		return view;
 	}
 	
 	init();
