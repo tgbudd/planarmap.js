@@ -31,6 +31,21 @@ svg path.face {
 svg path.babyuniverse {
 	fill: #a0a0a0;
 }
+svg path.dist0 {
+	fill: #38CDFF;
+}
+svg path.dist1 {
+	fill: #E085FF;
+}
+svg path.dist2 {
+	fill: #E0FF85;
+}
+svg path.dist3 {
+	fill: #FFA64D;
+}
+svg path.dist4 {
+	fill: purple;
+}
 svg text.label {
 	pointer-events: none;
 	font-family: Verdana;
@@ -71,7 +86,9 @@ var force = CMap.force(planarmap)
 	.on("tick",view.updatePositions)
 	.resume();
 	
-var peelEdge = planarmap.edges().random().getOriented(Math.random()<0.5);
+var peelEdge = planarmap.edges().get("edge0").getOriented(true);
+peelEdge.start().attr.distance = 1;
+peelEdge.end().attr.distance = 0;
 
 function computehfun(maxp){
 	var hfun = [0,0, 0.25 * Math.pow(3.0,-3.5) / Math.sqrt(Math.PI)];
@@ -129,45 +146,84 @@ var hfun = computehfun(80);
 var prob = computeprob(80);
 var boundaryLen = 2;
 
-setInterval(function(){
+var peelalgorithm = "distance";
+d3.select("body").on("keydown",function(){
+	if( d3.event.keyCode == 32 ) // space
+	{
+		peel();
+	} else if( d3.event.keyCode == 69 ) // e
+	{
+		peelalgorithm = "eden";
+	} else if( d3.event.keyCode == 68 ) // d
+	{
+		peelalgorithm = "distance";
+	}
+});
+		
+function peel(){
 	var k = randomLengthChange(boundaryLen,hfun,prob);
-	peelEdge.edge.class.peeledge = false;	
+	peelEdge.edge.class.peeledge = false;
+	
+	if( peelalgorithm == "eden" )
+	{
+		peelEdge = peelEdge.left().edges[
+			Math.floor(Math.random() * peelEdge.left().edges.length)];
+	}
+	
+	var dist = peelEdge.end().attr.distance;	
 	if( k == 1 ){
 		planarmap.insertEdgeNextTo(peelEdge.next());
 		peelEdge = planarmap.insertDiagonal(peelEdge.left(),
 			[peelEdge,peelEdge.next().next()],
 			{"outer":"left"}).getOriented().next();
+		peelEdge.start().attr.distance = peelEdge.end().attr.distance + 1;
 	} else
 	{
+		var babyuniverse = k!=-1 || Math.random() > 8.0/9;
 		if( Math.random() < 0.5 )
 		{
 			// baby universe swallowing -k edges
 			// to the left
-			var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
-				[peelEdge, (peelEdge.left().edgeIndex(peelEdge)
-				+ boundaryLen + k)%boundaryLen], {"outer":"right"});
-			peelEdge = planarmap.insertDiagonal(peelEdge.left(),
-				[peelEdge.next(),innerEdge.getOriented(true)],
-				{"outer":"right"}).getOriented(true);
-			innerEdge.left.class.babyuniverse = true;
+			if( babyuniverse ){
+				var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge, (peelEdge.left().edgeIndex(peelEdge)
+					+ boundaryLen + k)%boundaryLen], {"outer":"right"});
+				peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge.next(),innerEdge.getOriented(true)],
+					{"outer":"right"}).getOriented(true);
+				innerEdge.left.class.babyuniverse = true;
+			} else {
+				peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge.next(),peelEdge.prev()],
+					{"outer":"right"}).getOriented(true);
+			}
+
 		} else
 		{
 			// baby universe swallowing -k edges
 			// to the right
-			var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
-				[peelEdge.next(), (peelEdge.left().edgeIndex(peelEdge)
-				-k+1)%boundaryLen], {"outer":"left"});
-			peelEdge = planarmap.insertDiagonal(peelEdge.left(),
-				[peelEdge,innerEdge.getOriented().next()],
-				{"outer":"left"}).getOriented();
-			innerEdge.right.class.babyuniverse = true;	
+			if( babyuniverse ){
+				var innerEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge.next(), (peelEdge.left().edgeIndex(peelEdge)
+					-k+1)%boundaryLen], {"outer":"left"});
+				peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge,innerEdge.getOriented().next()],
+					{"outer":"left"}).getOriented();
+				innerEdge.right.class.babyuniverse = true;
+			}else{
+				peelEdge = planarmap.insertDiagonal(peelEdge.left(),
+					[peelEdge,peelEdge.next().next()],
+					{"outer":"left"}).getOriented();				
+			}	
 		}
 	}
+	peelEdge.right().attr.distance = dist;
 	peelEdge.edge.class.peeledge = true;
+	peelEdge.right().class["dist"+peelEdge.right().attr.distance] = true;
 	boundaryLen += k;
 	console.assert( boundaryLen == peelEdge.left().edges.length );
 	view.updateLayers();
-},1000);
+}
 
 </script>
 </body>
