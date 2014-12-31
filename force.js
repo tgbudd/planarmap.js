@@ -13,10 +13,11 @@ CMap.force = function (map){
 	var springCoupling = 2.0;
 	var controlParam = 0.4;
 	var dragforce = {drag: false, coupling: 10};
-	var stretchforce = {stretch: true, coupling: 0, power: 1.25};
+	var stretchforce = {stretch: false, coupling: 0.8, power: 2, 
+		anglescale: Math.PI/6 };
 	var running = false;
 	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
-	var minForceSq = 0;
+	var minForceSq = 0.05;
 	
 	force.repulsionPower = function(x) {
 		if (!arguments.length) return repulsionPower;
@@ -45,7 +46,12 @@ CMap.force = function (map){
 	};
 	force.stretchForce = function(x) {
 		if (!arguments.length) return stretchforce;
-		stretchforce = x;
+		if( typeof x === 'boolean' )
+		{ 
+			stretchforce.stretch = x;
+		} else {
+			stretchforce = x;
+		}
 		return force;	
 	};
 	force.energy = function(calcForce) {
@@ -94,6 +100,7 @@ CMap.force = function (map){
 	function stretchForceVertices(prev,v,next){
 		var bendangle = next.pos.minus(v.pos)
 			.angle(v.pos.minus(prev.pos));
+		/*
 		var energy = stretchforce.coupling *
 			Math.pow(Math.abs(bendangle),stretchforce.power);
 		if( Math.abs(bendangle) > 0.01 )
@@ -106,7 +113,23 @@ CMap.force = function (map){
 			prev.force.addVec(forcevec1);
 			v.force.subVec(forcevec1).addVec(forcevec2);
 			next.force.subVec(forcevec2);				
-		}
+		}*/
+		var energy = stretchforce.coupling *
+			Math.pow(Math.tanh(Math.abs(bendangle/stretchforce.anglescale))
+			,stretchforce.power);
+		if( Math.abs(bendangle) > 0.01 )
+		{
+			var scale = - 2 * stretchforce.power * energy 
+				/ stretchforce.anglescale / Math.sinh( 2 * bendangle 
+				/ stretchforce.anglescale );
+			var forcevec1 = prev.pos.minus(v.pos).rotate90()
+				.mult(scale/prev.pos.minus(v.pos).normSq());
+			var forcevec2 = next.pos.minus(v.pos).rotate90()
+				.mult(scale/next.pos.minus(v.pos).normSq());
+			prev.force.addVec(forcevec1);
+			v.force.subVec(forcevec1).addVec(forcevec2);
+			next.force.subVec(forcevec2);				
+		}		
 		return energy;
 	}
 	function dragForce(calcForce) {
@@ -257,8 +280,8 @@ CMap.force = function (map){
 		}
 		if( gradSq / planarmap.numNodes() < minForceSq )
 		{
-			force.stop();
-			return true;
+			//force.stop();
+			//return true;
 		} else
 		{
 			var done = false;

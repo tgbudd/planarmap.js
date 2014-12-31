@@ -8,6 +8,7 @@ html, body {
 	height: 100%;
 	margin: 0;
 	padding: 0;
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
 }
 #pmap {
 	width: 100%;
@@ -37,9 +38,24 @@ svg text.label {
 svg circle.node {
 	fill: #4040d0;
 }
+div#title {
+	z-index:101; 
+	position:absolute;
+	top:10px;
+	left:30px;
+}
+#title h1 {
+	color: black;
+	font-weight: 300;
+	font-size: 32px;
+	text-rendering: optimizeLegibility;
+}
 </style>
 </head>
 <body>
+<div id="title">
+<h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
+</div>
 <div id="pmap">
 </div>
 
@@ -62,21 +78,10 @@ var planarmap = CMap.PlanarMap();
 var layoutupdater = CMap.LayoutUpdater()
 	.registerAll(planarmap);
 planarmap.singleEdgeMap();
+planarmap.edges().get("edge0").class["mapedge"] = true;
 
-/*
-var startEdge = planarmap.edges().get("edge0").getOriented();
-var newEdge = planarmap.insertEdgeNextTo(startEdge).getOriented(true);
-var newEdge2 = planarmap.insertEdgeNextTo(newEdge).getOriented(true);
-var newEdge3 = planarmap.insertDiagonal(newEdge.left(),[startEdge.reverse(),newEdge2]).getOriented();
-var newEdge4 = planarmap.insertEdgeNextTo(newEdge.reverse()).getOriented(true);
-planarmap.insertDiagonal(startEdge.right(),[newEdge4,newEdge3.reverse()]);
-planarmap.edges().forEach(function(edge){
-	edge.class["quadedge"] = true;
-});
-CMap.graphDistance(planarmap,planarmap.nodes().random(),"distance");	
-*/
 var tree = CMap.growRandomTree(planarmap,
-	planarmap.edges().get("edge0").getOriented(),8);
+	planarmap.edges().get("edge0").getOriented(),18);
 	
 var view = CMap.View(planarmap,svg).zoom();
 view.nodeText(function(node){
@@ -85,9 +90,12 @@ view.nodeText(function(node){
 
 var force = CMap.force(planarmap)
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
-	.on("tick",view.updatePositions)
+	.stretchForce(true)
+	.on("tick",function(){ 
+		layoutupdater.attemptStretch(planarmap);
+		view.updatePositions();
+	})
 	.resume();
-
 
 
 var bijection;

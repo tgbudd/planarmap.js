@@ -225,5 +225,33 @@ CMap.LayoutUpdater = function() {
 		}
 		return this;
 	}
+	
+	updater.attemptStretch = function(planarmap){
+		planarmap.edges().forEach(function(e){
+			var prev = e.start;
+			var removeindex;
+			if( e.layout.vert.some(function(v,i){
+				var next = (i==e.layout.vert.length-1 ? e.end : e.layout.vert[i+1]);
+				var bendangle = next.pos.minus(v.pos)
+					.angle(v.pos.minus(prev.pos));
+				if( Math.abs(bendangle) < 0.2 ){
+					removeindex = i;
+					return true;
+				}
+				prev = v;
+				return false;
+			}) ) {
+				var removed = e.layout.vert.splice(removeindex,1)[0];
+				if( CMap.faceIsNonSimple(e.left) || 
+					CMap.faceIsNonSimple(e.right) )
+				{
+					e.layout.vert.splice(removeindex,0,removed);
+					console.log( "failed to remove aux. vert");
+				}else{		
+					console.log( "removed aux. vert");
+				}
+			}
+		});
+	}
 	return updater;
 }

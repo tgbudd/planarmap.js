@@ -452,6 +452,11 @@ CMap.polygonExteriorAngle = function(coor){
 }
 CMap.polygonIsSimple = function(pol,outer){
 	outer = defaultFor(outer,false);
+	if( (pol.length < 3 && !outer) ||
+		(pol.length < 2 && outer) )
+	{
+		return false;
+	}
 	var angle = CMap.polygonAngleSum(pol);
 	if( outer )
 	{
