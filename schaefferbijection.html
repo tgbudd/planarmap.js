@@ -50,11 +50,111 @@ div#title {
 	font-size: 32px;
 	text-rendering: optimizeLegibility;
 }
+.panelcontainer {
+	z-index:101;
+	position:absolute;
+	top:10px;
+	right:10px;
+	width:220px;
+	background-color: #444444;
+	margin: 0;
+	padding: 0;
+}
+.panel {
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	color: #d2d2d2;
+}
+.panel h2 {
+	display: block;
+	width: 100%;
+	padding-left: 8px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-right: 0;
+	margin: 0;
+	text-transform: uppercase;
+	font-size: 15px;
+	color: #bcbcbc;
+	background-color: #242424;
+	box-sizing: border-box;
+	border-top: 1px solid #bcbcbc;
+	border-bottom: 1px solid #bcbcbc;
+	cursor: pointer;
+}
+.panel h2:before {
+	content: "\25BE";
+	padding-right: 6px;
+}
+.panel.closed h2:before {
+	content: "\25B8";
+	padding-right: 6px;
+}
+.panel.closed p {
+	display: none;
+}
+.panel p {
+	display:block;
+	padding-left: 5px;
+	width:100%;
+	font-size: 14px;
+}
+.panel p label {
+	display: block;
+	width: 100%;
+}
+.panel p input.slider {
+	width:200px;
+	margin-left: 10px;
+	margin-right: 10px;
+}
 </style>
 </head>
 <body>
 <div id="title">
 <h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
+</div>
+<div class="panelcontainer"> 
+<!--	<div class="panel">
+		<h2>Force layout</h2>
+		<p>
+			<label for="springCoupling">Spring coupling: <span id="springCouplingValue">1</span></label>
+			<input type="range" class="slider" min="0.2" max="10" id="springCoupling" value="1" step="0.2" />
+		</p>
+		<p>
+			<label for="springLength">Spring length: <span id="springLengthValue">1</span></label>
+			<input type="range" class="slider" min="0.2" max="2.5" id="springLength" value="1" step="0.1" />
+		</p>
+		<p>
+			<label for="repulsionPower">Repulsion power: <span id="repulsionPowerValue">1</span></label>
+			<input type="range" class="slider" min="0.1" max="3" id="repulsionPower" value="1" step="0.1" />
+		</p>
+		<p>
+			<label for="centerPullCoupling">Center pull coupling: <span id="centerPullCouplingValue">1</span></label>
+			<input type="range" class="slider" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
+		</p>
+	</div>
+	<div class="panel">
+		<h2>Force layout</h2>
+		<p>
+			<label for="springCoupling">Spring coupling: <span id="springCouplingValue">1</span></label>
+			<input type="range" class="slider" min="0.2" max="10" id="springCoupling" value="1" step="0.2" />
+		</p>
+		<p>
+			<label for="springLength">Spring length: <span id="springLengthValue">1</span></label>
+			<input type="range" class="slider" min="0.2" max="2.5" id="springLength" value="1" step="0.1" />
+		</p>
+		<p>
+			<label for="repulsionPower">Repulsion power: <span id="repulsionPowerValue">1</span></label>
+			<input type="range" class="slider" min="0.1" max="3" id="repulsionPower" value="1" step="0.1" />
+		</p>
+		<p>
+			<label for="centerPullCoupling">Center pull coupling: <span id="centerPullCouplingValue">1</span></label>
+			<input type="range" class="slider" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
+		</p>
+	</div> -->
 </div>
 <div id="pmap">
 </div>
@@ -66,7 +166,21 @@ div#title {
 <script src="planarmap.js"></script>
 <script src="view.js"></script>
 <script src="algorithms.js"></script>
+<script src="controlpanel.js"></script>
 <script>
+
+	
+/*
+d3.selectAll(".panel").each(function(){
+	d3.select(this).select("h2").on("click",(function(){
+		var closed = false;
+		return function(){
+			closed = !closed;
+			d3.select(this.parentNode).classed({"closed":closed});
+		}
+	})());
+});
+*/	
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
@@ -96,6 +210,15 @@ var force = CMap.force(planarmap)
 		view.updatePositions();
 	})
 	.resume();
+
+var control = CMap.ControlPanel(".panelcontainer");
+
+control.addPanel("forcelayout","Force layout",
+	false, function(){ force.resume(); })
+	.addSlider("Spring coupling","springcoupling",
+		force.springCoupling, 0.2, 10, 0.2)
+	.addSlider("Spring length","springlength",
+		force.springLength, 0.2, 2.5, 0.1);	
 
 
 var bijection;
