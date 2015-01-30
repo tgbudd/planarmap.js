@@ -26,6 +26,7 @@ div#title {
 	font-weight: 300;
 	font-size: 32px;
 	text-rendering: optimizeLegibility;
+	margin-bottom:0px;
 }
 svg path.edge {
 	stroke: #905070;
@@ -73,8 +74,10 @@ svg circle.node {
 	
 <div id="title">
 	<h1>Peeling process of a uniform infinite planar type-2 triangulation.</h1>
-	<p>To switch between peeling algorithms press: "D" for distance/Watabiki (default), "E" for Eden model.</p>
-	<p>Use the mouse wheel to zoom.</p>
+	<p>Controls: SPACE = <a href="javascript:void(0)" onclick="peel();">next</a>,
+	"D" for <a href="javascript:void(0)" onclick="setDistance();">distance/Watabiki</a> (default), 
+	"E" for <a href="javascript:void(0)" onclick="setEden();">Eden model</a>,
+	mouse wheel/pinch = zoom.</p>
 </div>	
 <div id="pmap">
 </div>
@@ -175,12 +178,19 @@ d3.select("body").on("keydown",function(){
 		peel();
 	} else if( d3.event.keyCode == 69 ) // e
 	{
-		peelalgorithm = "eden";
+		setEden();
 	} else if( d3.event.keyCode == 68 ) // d
 	{
-		peelalgorithm = "distance";
+		setDistance();
 	}
 });
+
+function setDistance() {
+	peelalgorithm = "distance";
+}
+function setEden() {
+	peelalgorithm = "eden";
+}
 		
 function peel(){
 	var k = randomLengthChange(boundaryLen,hfun,prob);

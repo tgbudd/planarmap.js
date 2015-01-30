@@ -49,6 +49,7 @@ div#title {
 	font-weight: 300;
 	font-size: 32px;
 	text-rendering: optimizeLegibility;
+	margin-bottom:0px;
 }
 .panelcontainer {
 	z-index:101;
@@ -116,6 +117,8 @@ div#title {
 	
 <div id="title">
 	<h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
+	<p>Controls: SPACE = <a href="javascript:void(0)" onclick="doNext();">next</a>,
+		mouse wheel/pinch = zoom.</p>
 </div>
 
 <div class="panelcontainer"></div>
@@ -181,34 +184,38 @@ var curbijection = tree;
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 32 ) // space
 	{
-		if( curbijection.done() )
-		{
-			if( curbijection == tree )
-			{
-				CMap.randomTreeLabeling(planarmap,"distance");
-			}
-			if( curbijection == bijection || curbijection == tree )
-			{
-				invbijection = CMap.inverseSchaefferBijection(planarmap,"distance");
-				curbijection = invbijection;
-			} else
-			{
-				bijection = CMap.SchaefferBijection(planarmap,"distance");
-				curbijection = bijection;				
-			}
-		}
-		curbijection.runNext();
-		planarmap.edges().forEach(function(edge){
-			if( curbijection == tree ){
-				edge.class[ "mapedge"] = true;
-			} else if( edge.attr.bijectionstatus == "new" )
-			{
-				edge.class[(curbijection==bijection?"mapedge":"quadedge")] = true;
-			}
-		});
-		view.updateLayers();
+		doNext();
 	}
 });
+
+function doNext() {
+	if( curbijection.done() )
+	{
+		if( curbijection == tree )
+		{
+			CMap.randomTreeLabeling(planarmap,"distance");
+		}
+		if( curbijection == bijection || curbijection == tree )
+		{
+			invbijection = CMap.inverseSchaefferBijection(planarmap,"distance");
+			curbijection = invbijection;
+		} else
+		{
+			bijection = CMap.SchaefferBijection(planarmap,"distance");
+			curbijection = bijection;				
+		}
+	}
+	curbijection.runNext();
+	planarmap.edges().forEach(function(edge){
+		if( curbijection == tree ){
+			edge.class[ "mapedge"] = true;
+		} else if( edge.attr.bijectionstatus == "new" )
+		{
+			edge.class[(curbijection==bijection?"mapedge":"quadedge")] = true;
+		}
+	});
+	view.updateLayers();
+}
 
 </script>
 </body>
