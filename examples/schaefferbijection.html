@@ -113,74 +113,25 @@ div#title {
 </style>
 </head>
 <body>
+	
 <div id="title">
-<h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
-</div>
-<div class="panelcontainer"> 
-<!--	<div class="panel">
-		<h2>Force layout</h2>
-		<p>
-			<label for="springCoupling">Spring coupling: <span id="springCouplingValue">1</span></label>
-			<input type="range" class="slider" min="0.2" max="10" id="springCoupling" value="1" step="0.2" />
-		</p>
-		<p>
-			<label for="springLength">Spring length: <span id="springLengthValue">1</span></label>
-			<input type="range" class="slider" min="0.2" max="2.5" id="springLength" value="1" step="0.1" />
-		</p>
-		<p>
-			<label for="repulsionPower">Repulsion power: <span id="repulsionPowerValue">1</span></label>
-			<input type="range" class="slider" min="0.1" max="3" id="repulsionPower" value="1" step="0.1" />
-		</p>
-		<p>
-			<label for="centerPullCoupling">Center pull coupling: <span id="centerPullCouplingValue">1</span></label>
-			<input type="range" class="slider" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
-		</p>
-	</div>
-	<div class="panel">
-		<h2>Force layout</h2>
-		<p>
-			<label for="springCoupling">Spring coupling: <span id="springCouplingValue">1</span></label>
-			<input type="range" class="slider" min="0.2" max="10" id="springCoupling" value="1" step="0.2" />
-		</p>
-		<p>
-			<label for="springLength">Spring length: <span id="springLengthValue">1</span></label>
-			<input type="range" class="slider" min="0.2" max="2.5" id="springLength" value="1" step="0.1" />
-		</p>
-		<p>
-			<label for="repulsionPower">Repulsion power: <span id="repulsionPowerValue">1</span></label>
-			<input type="range" class="slider" min="0.1" max="3" id="repulsionPower" value="1" step="0.1" />
-		</p>
-		<p>
-			<label for="centerPullCoupling">Center pull coupling: <span id="centerPullCouplingValue">1</span></label>
-			<input type="range" class="slider" min="0" max="10" id="centerPullCoupling" value="1" step="0.25" />
-		</p>
-	</div> -->
-</div>
-<div id="pmap">
+	<h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
 </div>
 
-<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
-<script src="geometry.js"></script>
-<script src="layout.js"></script>
-<script src="force.js"></script>
-<script src="planarmap.js"></script>
-<script src="view.js"></script>
-<script src="algorithms.js"></script>
-<script src="controlpanel.js"></script>
+<div class="panelcontainer"></div>
+<div id="pmap"></div>
+
+
+<script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/layout.js"></script>
+<script src="../src/force.js"></script>
+<script src="../src/planarmap.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/algorithms.js"></script>
+<script src="../src/controlpanel.js"></script>
 <script>
 
-	
-/*
-d3.selectAll(".panel").each(function(){
-	d3.select(this).select("h2").on("click",(function(){
-		var closed = false;
-		return function(){
-			closed = !closed;
-			d3.select(this.parentNode).classed({"closed":closed});
-		}
-	})());
-});
-*/	
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")

@@ -7,12 +7,25 @@ html, body {
 	height: 100%;
 	margin: 0;
 	padding: 0;
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
 }
 #pmap {
 	width: 100%;
 	height: 100%;
 	top: 0;
 	left: 0;
+}
+div#title {
+	z-index:101; 
+	position:absolute;
+	top:10px;
+	left:30px;
+}
+#title h1 {
+	color: black;
+	font-weight: 300;
+	font-size: 32px;
+	text-rendering: optimizeLegibility;
 }
 svg path.edge {
 	stroke: #905070;
@@ -57,15 +70,21 @@ svg circle.node {
 </style>
 </head>
 <body>
+	
+<div id="title">
+	<h1>Peeling process of a uniform infinite planar type-2 triangulation.</h1>
+	<p>To switch between peeling algorithms press: "D" for distance/Watabiki (default), "E" for Eden model.</p>
+	<p>Use the mouse wheel to zoom.</p>
+</div>	
 <div id="pmap">
 </div>
 
-<script charset="utf-8" src="./thirdparty/d3/d3.js"></script>
-<script src="geometry.js"></script>
-<script src="layout.js"></script>
-<script src="force.js"></script>
-<script src="planarmap.js"></script>
-<script src="view.js"></script>
+<script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/layout.js"></script>
+<script src="../src/force.js"></script>
+<script src="../src/planarmap.js"></script>
+<script src="../src/view.js"></script>
 <script>
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
@@ -83,7 +102,10 @@ var view = CMap.View(planarmap,svg).zoom();
 
 var force = CMap.force(planarmap)
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
-	.on("tick",view.updatePositions)
+	.on("tick",function(){ 
+		layoutupdater.attemptStretch(planarmap);
+		view.updatePositions();
+	})
 	.resume();
 	
 var peelEdge = planarmap.edges().get("edge0").getOriented(true);
