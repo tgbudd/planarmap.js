@@ -276,18 +276,31 @@ CMap.randomTreeLabeling = function(planarmap,label){
 //    of the i'th node corresponds to the l'th edge of the k'th node.
 //  * startnode (optional): the id of the central node.
 //  * outerfacepath (optional): a two-dimensional array representing
-//    a path in the dual map from a corner of the central node to the 
+//    a path in the dual map from the corner to the left of the first
+//    edge of the central node to the 
 //    outer face, with entries outerfacepath[p] = [i,j] meaning that
-//    the p'th segment of the path crosses the j'th edge of the i'th node. 
+//    the p'th segment of the path crosses the j'th edge of the i'th node
+//    coming from the right. 
 //  * idlabel (optional): a string representing the label in which 
 //    the ids from adjlist will be stored, i.e. the node n corresponding
 //    to the i'th entry in adjlist will have n.attr[idlabel] == i.
 CMap.buildMapFromAdjacencyList = function(planarmap,adjlist,startnode,
 									 outerfacepath,idlabel){
 	"use strict";
+	var crossinglabel = "crossing";
 	idlabel = defaultFor(idlabel,"id");
 	startnode = defaultFor(startnode,0);
-	outerfacepath = defaultFor(outerfacepath,[]);
+	var outerfacepathcrossing = adjlist.map(function(a){ 
+		return a.map(function(){ return 0; });
+	});
+	if( outerfacepath !== undefined )
+	{
+		outerfacepath.forEach(function(p){
+			outerfacepathcrossing[p[0]][p[1]] += 1;
+			outerfacepathcrossing[ adjlist[p[0]][p[1]][0] ]
+				[ adjlist[p[0]][p[1]][1] ] -= 1;
+		});
+	}
 
 	var labeltonode = adjlist.map(function(){return 0;});	
 	var startEdge = planarmap.edges().random().getOriented();
@@ -300,23 +313,27 @@ CMap.buildMapFromAdjacencyList = function(planarmap,adjlist,startnode,
 	var entrydir = adjlist.map(function(){return 0;});
 	var queue = [startnode];
 
+	function processEdge(i,j,edge)
+	{
+		adjtoedge[i][j] = edge.getOriented();
+		adjtoedge[adjlist[i][j][0]][adjlist[i][j][1]] = edge.getOriented(true);
+		edge.attr[crossinglabel] = outerfacepathcrossing[i][j];
+	}
+
 	if( adjlist[startnode][0][0] == startnode )
 	{
 		// have to replace the single edge map by a single loop
 		var loopedge = planarmap.insertDiagonal(startEdge.left(),
 			[startEdge,startEdge]);
 		planarmap.removeEdge(startEdge);
-		adjtoedge[startnode][0] = loopedge.getOriented();
-		adjtoedge[startnode][adjlist[startnode][0][1]] = 
-			loopedge.getOriented(true);	
+		startEdge = loopedge.getOriented();
+		processEdge(startnode,0,loopedge);
 	} else
 	{
 		var firstnbr = adjlist[startnode][0][0];
 		labeltonode[firstnbr] = startEdge.end();
 		startEdge.end().attr[idlabel] = firstnbr;
-		adjtoedge[startnode][0] = startEdge;
-		adjtoedge[firstnbr][adjlist[startnode][0][1]] = 
-			startEdge.reverse();
+		processEdge(startnode,0,startEdge.edge);
 		queue.push(firstnbr);
 		entrydir[firstnbr] = adjlist[startnode][0][1];
 	}
@@ -354,32 +371,45 @@ CMap.buildMapFromAdjacencyList = function(planarmap,adjlist,startnode,
 		algorithm.push(function(){
 			var fromnode = labeltonode[queue[0]];
 			var tonodelabel = adjlist[queue[0]][currentdirection][0];
+			var newedge;
 			if( labeltonode[tonodelabel] === 0 )
 			{
 				// edge to new node
-				var newedge = planarmap.insertEdgeNextTo(
-					edgetotherightofcurdir).getOriented();
-				labeltonode[tonodelabel] = newedge.end();
-				newedge.end().attr[idlabel] = tonodelabel;
+				newedge = planarmap.insertEdgeNextTo(
+					edgetotherightofcurdir);
+				labeltonode[tonodelabel] = newedge.end;
+				newedge.end.attr[idlabel] = tonodelabel;
 				entrydir[tonodelabel] = adjlist[queue[0]][currentdirection][1];
-				adjtoedge[queue[0]][currentdirection] = newedge;
-				adjtoedge[tonodelabel][entrydir[tonodelabel]]
-					= newedge.reverse();
 				queue.push(tonodelabel);
 			}else
 			{
 				// edge to existing node
 				var tocorner = edgetotherightofcurdir;
+				var crossing = 0;
 				while( tocorner.start().attr[idlabel] !== tonodelabel )
 				{
 					tocorner = tocorner.prev();
+					crossing -= tocorner.edge.attr[crossinglabel]
+						* (tocorner.reversed ? -1 : 1 );
+					if( tocorner.isEqual(startEdge) )
+						crossing -= 1;
 				} 
-				var newedge = planarmap.insertDiagonal( tocorner.left(),
-					[edgetotherightofcurdir,tocorner]).getOriented();
-				adjtoedge[queue[0]][currentdirection] = newedge;
-				adjtoedge[tonodelabel][adjlist[queue[0]][currentdirection][1]]
-					= newedge.reverse();
+				var comment = {};
+				if( outerfacepath !== undefined 
+					&& tocorner.left().layout.outer )
+				{
+					if( crossing === outerfacepathcrossing[queue[0]][currentdirection] )
+					{
+						comment.outer = "right";
+					} else 
+					{
+						comment.outer = "left";
+					}
+				}
+				newedge = planarmap.insertDiagonal( tocorner.left(),
+					[edgetotherightofcurdir,tocorner],comment);
 			}	
+			processEdge(queue[0],currentdirection,newedge);
 			return nextDirection();
 		});
 	}

@@ -96,7 +96,7 @@ var force = CMap.force(planarmap)
 	.resume();
 
 d3.select("body").on("keydown",function(){
-	if( d3.event.keyCode == 32 ) // space
+	if( d3.event.keyCode == 32 || d3.event.keyCode == 34 ) // space or page down
 	{
 		doNext();
 	}
@@ -124,7 +124,9 @@ var adjlist = [[[13, 1], [1, 5], [11, 0], [9, 0], [8, 0]],
  [[5, 5], [12, 1], [14, 0], [12, 0], [15, 3], [15, 1], [17, 1]],
  [[6, 0]]];
 
-var builder = CMap.buildMapFromAdjacencyList(planarmap,adjlist,0);
+var builder = CMap.buildMapFromAdjacencyList(planarmap,adjlist,0,
+	[[1,0],[1,1]]
+);
 
 function doNext(){
 	if( !builder.done() )
