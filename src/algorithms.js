@@ -71,13 +71,18 @@ CMap.steppedAlgorithm = function(){
 	this.index = 0;
 }
 CMap.steppedAlgorithm.prototype.runAll = function(){
-	var algorithm = this;
-	this.steps.forEach(function(fun){fun.call(algorithm);})
-	this.index = this.steps.length;
+	var done = false;
+	while( !done )
+	{
+		done = this.runNext();
+	}
 }
 CMap.steppedAlgorithm.prototype.runNext = function(){
-	this.steps[this.index].call(this);
-	this.index++;
+	var repeat = this.steps[this.index].call(this);
+	if( repeat === undefined || repeat === false )
+	{
+		this.index++;
+	}
 	return this.index >= this.steps.length;
 }
 CMap.steppedAlgorithm.prototype.done = function(){
@@ -261,4 +266,122 @@ CMap.randomTreeLabeling = function(planarmap,label){
 	planarmap.nodes().forEach(function(node){
 		node.attr[label] += 1 - min;
 	});
+}
+
+// Build a planar map with the required adjacency.
+// Arguments:
+//  * planarmap: a PlanarMap object assumed to be a single edge map
+//  * adjlist: a three-dimensional array with entries
+//    adjlist[i][j] = [k,l] meaning that the j'th edge (in ccw order)
+//    of the i'th node corresponds to the l'th edge of the k'th node.
+//  * startnode (optional): the id of the central node.
+//  * outerfacepath (optional): a two-dimensional array representing
+//    a path in the dual map from a corner of the central node to the 
+//    outer face, with entries outerfacepath[p] = [i,j] meaning that
+//    the p'th segment of the path crosses the j'th edge of the i'th node. 
+//  * idlabel (optional): a string representing the label in which 
+//    the ids from adjlist will be stored, i.e. the node n corresponding
+//    to the i'th entry in adjlist will have n.attr[idlabel] == i.
+CMap.buildMapFromAdjacencyList = function(planarmap,adjlist,startnode,
+									 outerfacepath,idlabel){
+	"use strict";
+	idlabel = defaultFor(idlabel,"id");
+	startnode = defaultFor(startnode,0);
+	outerfacepath = defaultFor(outerfacepath,[]);
+
+	var labeltonode = adjlist.map(function(){return 0;});	
+	var startEdge = planarmap.edges().random().getOriented();
+	labeltonode[startnode] = startEdge.start();
+	startEdge.start().attr[idlabel] = startnode;
+
+	var adjtoedge = adjlist.map(function(a){
+		return a.map(function(){ return 0; });
+	});
+	var entrydir = adjlist.map(function(){return 0;});
+	var queue = [startnode];
+
+	if( adjlist[startnode][0][0] == startnode )
+	{
+		// have to replace the single edge map by a single loop
+		var loopedge = planarmap.insertDiagonal(startEdge.left(),
+			[startEdge,startEdge]);
+		planarmap.removeEdge(startEdge);
+		adjtoedge[startnode][0] = loopedge.getOriented();
+		adjtoedge[startnode][adjlist[startnode][0][1]] = 
+			loopedge.getOriented(true);	
+	} else
+	{
+		var firstnbr = adjlist[startnode][0][0];
+		labeltonode[firstnbr] = startEdge.end();
+		startEdge.end().attr[idlabel] = firstnbr;
+		adjtoedge[startnode][0] = startEdge;
+		adjtoedge[firstnbr][adjlist[startnode][0][1]] = 
+			startEdge.reverse();
+		queue.push(firstnbr);
+		entrydir[firstnbr] = adjlist[startnode][0][1];
+	}
+	
+	var algorithm = new CMap.steppedAlgorithm();
+	
+	var edgetotherightofcurdir = startEdge;
+	var currentdirection = 0;
+	function nextDirection() {
+		while( queue.length > 0 )
+		{
+			do {
+				if( currentdirection !== entrydir[queue[0]] )
+				{
+					edgetotherightofcurdir = edgetotherightofcurdir.prev()
+						.reverse();
+				}
+				currentdirection = (currentdirection+1)
+					% adjlist[queue[0]].length;
+				if( adjtoedge[queue[0]][currentdirection] === 0 )
+					return true;
+			} while( currentdirection !== entrydir[queue[0]] );
+			queue.shift();
+			if( queue.length > 0 )
+			{
+				currentdirection = entrydir[queue[0]];
+				edgetotherightofcurdir = adjtoedge[queue[0]][currentdirection];
+			}
+		}
+		return false;
+	}
+	
+	if( nextDirection() )
+	{
+		algorithm.push(function(){
+			var fromnode = labeltonode[queue[0]];
+			var tonodelabel = adjlist[queue[0]][currentdirection][0];
+			if( labeltonode[tonodelabel] === 0 )
+			{
+				// edge to new node
+				var newedge = planarmap.insertEdgeNextTo(
+					edgetotherightofcurdir).getOriented();
+				labeltonode[tonodelabel] = newedge.end();
+				newedge.end().attr[idlabel] = tonodelabel;
+				entrydir[tonodelabel] = adjlist[queue[0]][currentdirection][1];
+				adjtoedge[queue[0]][currentdirection] = newedge;
+				adjtoedge[tonodelabel][entrydir[tonodelabel]]
+					= newedge.reverse();
+				queue.push(tonodelabel);
+			}else
+			{
+				// edge to existing node
+				var tocorner = edgetotherightofcurdir;
+				while( tocorner.start().attr[idlabel] !== tonodelabel )
+				{
+					tocorner = tocorner.prev();
+				} 
+				var newedge = planarmap.insertDiagonal( tocorner.left(),
+					[edgetotherightofcurdir,tocorner]).getOriented();
+				adjtoedge[queue[0]][currentdirection] = newedge;
+				adjtoedge[tonodelabel][adjlist[queue[0]][currentdirection][1]]
+					= newedge.reverse();
+			}	
+			return nextDirection();
+		});
+	}
+	return algorithm;
 }

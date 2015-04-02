@@ -1,0 +1,233 @@
+
+
+<html>
+<head>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+#pmap {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+svg path.quadedge {
+	stroke: #404040;
+	stroke-width: 0.05;
+	fill: none;
+}
+svg path.mapedge {
+	stroke: #d02020;
+	stroke-width: 0.07;
+	fill: none;
+}
+svg path.face {
+	stroke: node;
+	fill: white;
+}
+svg text.label {
+	pointer-events: none;
+	font-family: Verdana;
+	font-size: 0.3;
+}
+svg circle.node {
+	fill: #4040d0;
+}
+div#title {
+	z-index:101; 
+	position:absolute;
+	top:10px;
+	left:30px;
+}
+#title h1 {
+	color: black;
+	font-weight: 300;
+	font-size: 32px;
+	text-rendering: optimizeLegibility;
+	margin-bottom:0px;
+}
+.panelcontainer {
+	z-index:101;
+	position:absolute;
+	top:10px;
+	right:10px;
+	width:220px;
+	background-color: #444444;
+	margin: 0;
+	padding: 0;
+}
+.panel {
+	display: block;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	color: #d2d2d2;
+}
+.panel h2 {
+	display: block;
+	width: 100%;
+	padding-left: 8px;
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-right: 0;
+	margin: 0;
+	text-transform: uppercase;
+	font-size: 15px;
+	color: #bcbcbc;
+	background-color: #242424;
+	box-sizing: border-box;
+	border-top: 1px solid #bcbcbc;
+	border-bottom: 1px solid #bcbcbc;
+	cursor: pointer;
+}
+.panel h2:before {
+	content: "\25BE";
+	padding-right: 6px;
+}
+.panel.closed h2:before {
+	content: "\25B8";
+	padding-right: 6px;
+}
+.panel.closed p {
+	display: none;
+}
+.panel p {
+	display:block;
+	padding-left: 5px;
+	width:100%;
+	font-size: 14px;
+}
+.panel p label {
+	display: block;
+	width: 100%;
+}
+.panel p input.slider {
+	width:200px;
+	margin-left: 10px;
+	margin-right: 10px;
+}
+</style>
+</head>
+<body>
+	
+<div id="title">
+	<h1>Schaeffer's bijection between labeled trees and quadrangulations</h1>
+	<p>Controls: SPACE = <a href="javascript:void(0)" onclick="doNext();">next</a>,
+		mouse wheel/pinch = zoom.</p>
+</div>
+
+<div class="panelcontainer"></div>
+<div id="pmap"></div>
+
+
+<script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/layout.js"></script>
+<script src="../src/force.js"></script>
+<script src="../src/planarmap.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/algorithms.js"></script>
+<script src="../src/controlpanel.js"></script>
+<script>
+
+var svg = d3.select("#pmap").append("svg")
+	.attr("id","pmapsvg")
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-8 -5 16 10")
+	.attr("preserveAspectRatio", "xMidYMid meet")	
+	
+var planarmap = CMap.PlanarMap();
+var layoutupdater = CMap.LayoutUpdater()
+	.registerAll(planarmap);
+planarmap.singleEdgeMap();
+planarmap.edges().get("edge0").class["mapedge"] = true;
+
+var tree = CMap.growRandomTree(planarmap,
+	planarmap.edges().get("edge0").getOriented(),8);
+	
+var view = CMap.View(planarmap,svg).zoom();
+view.nodeText(function(node){
+	return node.attr.distance;
+}).updateLayers();
+
+var force = CMap.force(planarmap)
+	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
+	.stretchForce(true)
+	.on("tick",function(){ 
+		layoutupdater.attemptStretch(planarmap);
+		view.updatePositions();
+	})
+	.resume();
+
+var control = CMap.ControlPanel(".panelcontainer");
+
+control.addPanel("forcelayout","Force layout",
+	false, function(){ force.resume(); })
+	.addSlider("Spring coupling","springcoupling",
+		force.springCoupling, 0.2, 10, 0.2)
+	.addSlider("Spring length","springlength",
+		force.springLength, 0.2, 2.5, 0.1);	
+
+
+var bijection;
+var invbijection;
+var curbijection = tree;
+
+
+
+d3.select("body").on("keydown",function(){
+	if( d3.event.keyCode == 32 ) // space
+	{
+		doNext();
+	}
+});
+
+function negateLabels() {
+	planarmap.nodes().forEach(function(n){
+		n.attr["distance"] *= -1;
+	});
+}
+
+function doNext() {
+	if( curbijection.done() )
+	{
+		if( curbijection == tree )
+		{
+			CMap.randomTreeLabeling(planarmap,"distance");
+		}
+		if( curbijection == invbijection )
+		{
+			negateLabels();
+		}
+		if( curbijection == bijection || curbijection == tree )
+		{
+			invbijection = CMap.inverseSchaefferBijection(planarmap,"distance");
+			curbijection = invbijection;
+		} else
+		{
+			bijection = CMap.SchaefferBijection(planarmap,"distance");
+			curbijection = bijection;				
+		}
+	}
+	curbijection.runNext();
+	planarmap.edges().forEach(function(edge){
+		if( curbijection == tree ){
+			edge.class[ "mapedge"] = true;
+		} else if( edge.attr.bijectionstatus == "new" )
+		{
+			edge.class[(curbijection==bijection?"mapedge":"quadedge")] = true;
+		}
+	});
+	view.updateLayers();
+}
+
+</script>
+</body>
+</html>
+
