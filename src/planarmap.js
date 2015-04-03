@@ -24,6 +24,11 @@ CMap.Face = function (){
 	this.layout = {};
 	this.class = {"face":true};
 }
+CMap.Face.prototype.fromJSON = function(){
+	this.edges.forEach(function(e) {
+		e.__proto__ = CMap.OrientedEdge.prototype;
+	});
+}
 CMap.Face.prototype.clear = function() {
 	while(this.edges.length > 0){
 		this.edges.pop();
@@ -63,7 +68,7 @@ CMap.Face.prototype.copy = function() {
 }
 CMap.Face.prototype.updateReferences = function(dict) {
 	this.edges.forEach(function(e){
-		e.edge = dict[e.edge.uid];
+		e.edge = dict[ e.edge instanceof CMap.Edge ? e.edge.uid : e.edge ];
 	});	
 }
 CMap.Face.prototype.removeEdge = function(orientededge) {
@@ -81,6 +86,12 @@ CMap.OrientedEdge = function(edge,reversed){
 	this.edge = edge;
 	this.reversed = reversed;
 
+}
+CMap.OrientedEdge.prototype.toJSON = function(){
+	return {
+		edge: this.edge.uid,
+		reversed: this.reversed
+	};
 }
 CMap.OrientedEdge.prototype.end = function(){
 	if( arguments.length > 0 )
@@ -149,6 +160,20 @@ CMap.Node = function (){
 	this.class = {"node":true};
 	this.pos = new Vec2(0,0);
 }
+CMap.Node.prototype.fromJSON = function(){
+	this.edges.forEach(function(e) {
+		e.__proto__ = CMap.OrientedEdge.prototype;
+	});
+	this.pos = new Vec2(this.pos.x,this.pos.y);
+}
+CMap.Node.prototype.toJSON = function(){
+	return { 
+		edges:this.edges,
+		attr:this.attr,
+		class:this.class,
+		pos:this.pos
+	};
+}
 CMap.Node.prototype.clear = function(){
 	while(this.edges.length > 0){
 		this.edges.pop();
@@ -195,7 +220,7 @@ CMap.Node.prototype.copy = function() {
 }
 CMap.Node.prototype.updateReferences = function(dict) {
 	this.edges.forEach(function(e){
-		e.edge = dict[e.edge.uid];
+		e.edge = dict[ e.edge instanceof CMap.Edge ? e.edge.uid : e.edge ];
 	});	
 }
 CMap.Node.prototype.removeEdge = function(orientededge) {
@@ -215,6 +240,24 @@ CMap.Edge = function (start,end,left,right){
 	this.attr = {};
 	this.layout = {vert: []};
 	this.class = {"edge":true};
+}
+CMap.Edge.prototype.fromJSON = function(){
+	this.layout.__proto__ = CMap.EdgeLayout.prototype;
+	if( this.layout.fromJSON !== undefined )
+	{
+		this.layout.fromJSON();
+	}
+}
+CMap.Edge.prototype.toJSON = function(){
+	return {
+		start: this.start.uid,
+		end: this.end.uid,
+		left: this.left.uid,
+		right: this.right.uid,
+		attr: this.attr,
+		layout: this.layout,
+		class: this.class
+	};
 }
 CMap.Edge.prototype.clear = function(){
 	this.start = null;
@@ -238,10 +281,10 @@ CMap.Edge.prototype.copy = function() {
 	return edge;
 }
 CMap.Edge.prototype.updateReferences = function(dict) {
-	this.start = dict[this.start.uid];
-	this.end = dict[this.end.uid];
-	this.left = dict[this.left.uid];
-	this.right = dict[this.right.uid];
+	this.start = dict[ this.start instanceof CMap.Node ? this.start.uid : this.start ];
+	this.end = dict[ this.end instanceof CMap.Node ? this.end.uid : this.end ];
+	this.left = dict[ this.left instanceof CMap.Face ? this.left.uid : this.left ];
+	this.right = dict[ this.right instanceof CMap.Face ? this.right.uid : this.right ];
 }
 
 CMap.UIdContainer = function (prefix){
@@ -362,6 +405,34 @@ CMap.UIdContainer = function (prefix){
 	}
 	container.random = function(){
 		return randomElement(container.array());
+	}
+	container.toJSON = function(){
+		return {
+			prefix: prefix,
+			newUId: newUId,
+			size: size,
+			data: data
+		};
+	}
+	container.fromJSON = function(json,proto){
+		prefix = json.prefix;
+		newUId = json.newUId;
+		size = json.size;
+		data = json.data;
+		for( var uid in data )
+		{
+			data[uid].uid = uid;
+		}
+		if( proto !== undefined )
+		{
+			this.forEach(function(d){ 
+				d.__proto__ = proto;
+				if( d.fromJSON !== undefined )
+				{
+					d.fromJSON();
+				}
+			});
+		}
 	}
 	return container;
 }
@@ -599,6 +670,19 @@ CMap.PlanarMap = function (){
 		}
 		return true;
 	}
+	function getDictionary(){
+		var dict = {};
+		nodes.forEach(function(n){
+			dict[n.uid] = n;
+		});
+		edges.forEach(function(e){
+			dict[e.uid] = e;
+		});
+		faces.forEach(function(f){
+			dict[f.uid] = f;
+		});		
+		return dict;
+	}
 	planarmap.deepCopy = function(){
 		var map = CMap.PlanarMap();
 		var dict = {};
@@ -627,6 +711,31 @@ CMap.PlanarMap = function (){
 			f.updateReferences(dict);
 		});
 		return map;
+	}
+	planarmap.toJSON = function(){
+		return {
+			nodes: nodes,
+			edges: edges,
+			faces: faces,
+			outerface: outerface.uid
+		};
+	}
+	planarmap.fromJSON = function(json){
+		nodes.fromJSON(json.nodes,CMap.Node.prototype);
+		edges.fromJSON(json.edges,CMap.Edge.prototype);
+		faces.fromJSON(json.faces,CMap.Face.prototype);
+		var dict = getDictionary();
+		outerface = dict[json.outerface];
+		nodes.forEach(function(n){
+			n.updateReferences(dict);
+		});
+		edges.forEach(function(e){
+			e.updateReferences(dict);
+		});
+		faces.forEach(function(f){
+			f.updateReferences(dict);
+		});		
+		return this;
 	}
 	return planarmap;
 };

@@ -67,6 +67,10 @@ CMap.force = function (map){
 				{
 					n.force = new Vec2(0,0);
 				}
+				if( !("oldpos" in n) )
+				{
+					n.oldpos = n.pos.copy();
+				}
 			});
 		}
 		

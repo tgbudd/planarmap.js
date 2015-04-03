@@ -107,86 +107,32 @@ div#chart {
 <script src="../src/planarmap.js"></script>
 <script src="../src/view.js"></script>
 <script src="../src/algorithms.js"></script>
+<script src="planarmap2.jsonp"></script>
 <script>
 
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
 	.attr("height","100%")
-	.attr("viewBox","-8 -5 16 10")
+	.attr("viewBox","-11 -5 22 12")
 	.attr("preserveAspectRatio", "xMidYMid meet")	
 	
-var planarmap = CMap.PlanarMap();
-var layoutupdater = CMap.LayoutUpdater()
-	.registerAll(planarmap);
-planarmap.singleEdgeMap();
+var planarmap = CMap.PlanarMap().fromJSON(mapdata);
 	
 var view = CMap.View(planarmap,svg).zoom();
-/*view.nodeText(function(node){
-	return node.attr.id ;
-}).updateLayers();*/
 view.nodeText().updateLayers();
 
-var force = CMap.force(planarmap)
-	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
-	.stretchForce(true)
-	.on("tick",function(){ 
-		layoutupdater.attemptStretch(planarmap);
-		view.updatePositions();
-	})
-	.resume();
-
+var showchart = true;
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 32 || d3.event.keyCode == 34 ) // space or page down
 	{
 		doNext();
+	} else if ( d3.event.keyCode == 76 ) // L
+	{
+		showchart = !showchart;
+		d3.select("#chart").style("display", showchart ? "block" : "none");
 	}
 });
-
-var adjlist = [
- [[7, 8], [9, 1], [7, 6], [3, 1], [2, 0], [1, 1]],
- [[10, 3], [0, 5], [2, 4], [2, 3], [4, 7], [22, 3], [24, 0], [23, 0], 
-	[15, 1]],
- [[0, 4], [5, 4], [4, 8], [1, 3], [1, 2]],
- [[5, 5], [0, 3]],
- [[5, 2], [8, 2], [14, 2], [13, 2], [4, 6], [12, 0], [4, 4], [1, 4], 
-	[2, 2]],
- [[8, 4], [8, 3], [4, 0], [6, 0], [2, 1], [3, 0]],
- [[5, 3]],
- [[27, 1], [18, 3], [16, 6], [16, 5], [11, 2], [8, 5], [0, 2], 
-	[9, 0], [0, 0], [10, 1]],
- [[11, 1], [14, 0], [4, 1], [5, 1], [5, 0], [7, 5]],
- [[7, 7], [0, 1]],
- [[25, 1], [7, 9], [31, 0], [1, 0], [15, 0], [30, 0], [29, 1]],
- [[16, 4], [8, 0], [7, 4]],
- [[4, 5]],
- [[17, 2], [22, 0], [4, 3]],
- [[8, 1], [16, 3], [4, 2]],
- [[10, 4], [1, 8], [29, 2]],
- [[19, 0], [20, 0], [18, 2], [14, 1], [11, 0], [7, 3], [7, 2]],
- [[18, 1], [21, 0], [13, 0]],
- [[28, 0], [17, 0], [16, 2], [7, 1]],
- [[16, 0]],
- [[16, 1]],
- [[17, 1], [22, 1]],
- [[13, 1], [21, 1], [24, 1], [1, 5]],
- [[1, 7],[23,2],[23,1]],
- [[1, 6], [22, 2]],
- [[26, 1], [10, 0], [29, 0]],
- [[27, 2], [25, 0]],
- [[28, 1], [7, 0], [26, 0],[32,0],[33,0]],
- [[18, 0], [27, 0]],
- [[25, 2], [10, 6], [15, 2]],
- [[10, 5]],
- [[10, 2]],
- [[27,3]],
- [[27,4]],
-];
-
-
-var builder = CMap.buildMapFromAdjacencyList(planarmap,adjlist,0,
-	[[7,8],[7,9],[27,2]]
-);
 
 var doPeeling = doLazyPeeling;
 var boundary = [];
@@ -194,10 +140,7 @@ var peelposition = -1;
 var targetvertex;
 
 function doNext(){
-	if( !builder.done() )
-	{
-		builder.runNext();
-	} else if( boundary.length > 0 )
+	if( boundary.length > 0 )
 	{
 		if( peelposition === -1 )
 		{
@@ -205,7 +148,6 @@ function doNext(){
 			boundary[peelposition].edge.class["peeledge"]=true;
 		} else
 		{
-			force.stop();
 			var wasbaby = doPeeling();
 			addLengthData(boundary.length,wasbaby);
 			peelposition = -1;

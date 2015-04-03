@@ -7,6 +7,15 @@ CMap.AuxiliaryVertex = function(vec) {
 CMap.AuxiliaryVertex.prototype.copy = function() {
 	return new CMap.AuxiliaryVertex(this.pos);
 }
+CMap.AuxiliaryVertex.prototype.fromJSON = function() {
+	this.pos = new Vec2(this.pos.x,this.pos.y);
+}
+CMap.AuxiliaryVertex.prototype.toJSON = function() {
+	return {
+		pos: this.pos,
+		attemptremoval: this.attemptremoval
+	};
+}
 CMap.EdgeLayout = function() {
 	this.vert = [];
 }
@@ -14,6 +23,12 @@ CMap.EdgeLayout.prototype.copy = function() {
 	var el = new CMap.EdgeLayout();
 	el.vert = this.vert.map(function(n){n.copy();});
 	return el;
+}
+CMap.EdgeLayout.prototype.fromJSON = function() {
+	this.vert.forEach(function(v){ 
+		v.__proto__ = CMap.AuxiliaryVertex.prototype;
+		v.fromJSON();
+	});
 }
 CMap.getVerticesOnEdge = function(orientededge,includefirst,includelast) {
 	includefirst = defaultFor(includefirst,true);
