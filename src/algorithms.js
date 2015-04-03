@@ -415,3 +415,37 @@ CMap.buildMapFromAdjacencyList = function(planarmap,adjlist,startnode,
 	}
 	return algorithm;
 }
+
+// Apply facefunction to each face that is enclosed in cw direction
+// by the boundary, which is a sequence of oriented edges in planarmap
+CMap.applyToDisk = function(planarmap,boundary,facefunction) {
+	var visited = {};
+	var inboundary = {};
+	boundary.forEach(function(e){ inboundary[e.edge.uid] = true; });
+	var queue = [];
+	boundary.forEach(function(edge){
+		if( !boundary.some(function(e){ return e.isReverse(edge); }) )
+		{
+			var face = edge.right();
+			if( !(face.uid in visited) )
+			{
+				visited[face.uid] = true;
+				queue.push(face);
+			}
+		}
+	});
+	while( queue.length > 0 )
+	{
+		var face = queue[0];
+		queue.shift();
+		facefunction(face);
+		face.edges.forEach(function(edge){
+			if( !(edge.edge.uid in inboundary) && 
+				!(edge.right().uid in visited) )
+			{
+				visited[edge.right().uid] = true;
+				queue.push(edge.right());
+			}
+		})
+	}
+} 

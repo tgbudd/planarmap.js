@@ -118,13 +118,14 @@ CMap.View = function(map,targetsvg) {
 		});
 		
 		newNodeGroups.append("text")
-			.attr("dx",0.14)
-			.attr("dy",-0.1)
-			.attr("class","label")
-			.style("text-anchor","start");
-			
+				.attr("dx",0.14)
+				.attr("dy",-0.1)
+				.attr("class","label")
+				.style("text-anchor","start");
+				
 		nodeGroups.select("text").each(function(n){
-			d3.select(this).text(nodeTextFunction(n));
+			d3.select(this).text((nodeTextFunction !== undefined ?
+				nodeTextFunction(n) : ""));
 		});
 		
 		view.updateNodePositions(newNodeGroups);

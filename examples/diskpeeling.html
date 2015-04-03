@@ -1,0 +1,296 @@
+
+
+<html>
+<head>
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+#pmap {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+svg path.edge {
+	stroke: #202020;
+	stroke-width: 0.04;
+	fill: none;
+}
+svg path.boundaryedge {
+	stroke: #b02020;
+	stroke-width: 0.08;
+}
+svg path.peeledge {
+	stroke: #20ff20;
+	stroke-width: 0.08;
+}
+svg path.explorededge {
+	stroke: #c0c0c0;
+	stroke-width: 0.03;
+}
+svg path.face {
+	stroke: none;
+	fill: #bbbbff;
+}
+svg path.exploredface {
+	stroke: none;
+	fill: #f0f0f0;
+}
+svg text.label {
+	pointer-events: none;
+	font-family: Verdana;
+	font-size: 0.3;
+}
+svg circle.node {
+	fill: #404040;
+}
+svg circle.targetnode {
+	fill: #ffffff;
+	stroke: #0000ff;
+	stroke-width: 0.02;
+}
+div#title {
+	z-index:101; 
+	position:absolute;
+	top:10px;
+	left:30px;
+}
+#title h1 {
+	color: black;
+	font-weight: 300;
+	font-size: 32px;
+	text-rendering: optimizeLegibility;
+	margin-bottom:0px;
+}
+</style>
+</head>
+<body>
+	
+<div id="title">
+	<h1>Builder</h1>
+	<p>Controls: SPACE = <a href="javascript:void(0)" onclick="doNext();">next</a>,
+		mouse wheel/pinch = zoom.</p>
+</div>
+
+<div class="panelcontainer"></div>
+<div id="pmap"></div>
+
+
+<script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
+<script src="../src/geometry.js"></script>
+<script src="../src/layout.js"></script>
+<script src="../src/force.js"></script>
+<script src="../src/planarmap.js"></script>
+<script src="../src/view.js"></script>
+<script src="../src/algorithms.js"></script>
+<script>
+
+var svg = d3.select("#pmap").append("svg")
+	.attr("id","pmapsvg")
+	.attr("width","100%")
+	.attr("height","100%")
+	.attr("viewBox","-8 -5 16 10")
+	.attr("preserveAspectRatio", "xMidYMid meet")	
+	
+var planarmap = CMap.PlanarMap();
+var layoutupdater = CMap.LayoutUpdater()
+	.registerAll(planarmap);
+planarmap.singleEdgeMap();
+	
+var view = CMap.View(planarmap,svg).zoom();
+/*view.nodeText(function(node){
+	return node.attr.id ;
+}).updateLayers();*/
+view.nodeText().updateLayers();
+
+var force = CMap.force(planarmap)
+	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
+	.stretchForce(true)
+	.on("tick",function(){ 
+		layoutupdater.attemptStretch(planarmap);
+		view.updatePositions();
+	})
+	.resume();
+
+d3.select("body").on("keydown",function(){
+	if( d3.event.keyCode == 32 || d3.event.keyCode == 34 ) // space or page down
+	{
+		doNext();
+	}
+});
+
+var adjlist = [
+ [[7, 8], [9, 1], [7, 6], [3, 1], [2, 0], [1, 1]],
+ [[10, 3], [0, 5], [2, 4], [2, 3], [4, 7], [22, 3], [24, 0], [23, 0], 
+	[15, 1]],
+ [[0, 4], [5, 4], [4, 8], [1, 3], [1, 2]],
+ [[5, 5], [0, 3]],
+ [[5, 2], [8, 2], [14, 2], [13, 2], [4, 6], [12, 0], [4, 4], [1, 4], 
+	[2, 2]],
+ [[8, 4], [8, 3], [4, 0], [6, 0], [2, 1], [3, 0]],
+ [[5, 3]],
+ [[27, 1], [18, 3], [16, 6], [16, 5], [11, 2], [8, 5], [0, 2], 
+	[9, 0], [0, 0], [10, 1]],
+ [[11, 1], [14, 0], [4, 1], [5, 1], [5, 0], [7, 5]],
+ [[7, 7], [0, 1]],
+ [[25, 1], [7, 9], [31, 0], [1, 0], [15, 0], [30, 0], [29, 1]],
+ [[16, 4], [8, 0], [7, 4]],
+ [[4, 5]],
+ [[17, 2], [22, 0], [4, 3]],
+ [[8, 1], [16, 3], [4, 2]],
+ [[10, 4], [1, 8], [29, 2]],
+ [[19, 0], [20, 0], [18, 2], [14, 1], [11, 0], [7, 3], [7, 2]],
+ [[18, 1], [21, 0], [13, 0]],
+ [[28, 0], [17, 0], [16, 2], [7, 1]],
+ [[16, 0]],
+ [[16, 1]],
+ [[17, 1], [22, 1]],
+ [[13, 1], [21, 1], [24, 1], [1, 5]],
+ [[1, 7],[23,2],[23,1]],
+ [[1, 6], [22, 2]],
+ [[26, 1], [10, 0], [29, 0]],
+ [[27, 2], [25, 0]],
+ [[28, 1], [7, 0], [26, 0],[32,0],[33,0]],
+ [[18, 0], [27, 0]],
+ [[25, 2], [10, 6], [15, 2]],
+ [[10, 5]],
+ [[10, 2]],
+ [[27,3]],
+ [[27,4]],
+];
+
+
+var builder = CMap.buildMapFromAdjacencyList(planarmap,adjlist,0,
+	[[7,8],[7,9],[27,2]]
+);
+
+var doPeeling = doLazyPeeling;
+var boundary = [];
+var peelposition = -1;
+var targetvertex;
+
+function doNext(){
+	if( !builder.done() )
+	{
+		builder.runNext();
+	} else if( boundary.length > 0 )
+	{
+		if( peelposition === -1 )
+		{
+			peelposition = getRandomInt(0,boundary.length-1);
+			boundary[peelposition].edge.class["peeledge"]=true;
+		} else
+		{
+			force.stop();
+			doPeeling();
+			peelposition = -1;
+		}
+	} else
+	{
+		if( targetvertex instanceof CMap.Node )
+		{
+			targetvertex.class["targetnode"] = false;
+			planarmap.faces().forEach(function(f){
+				f.class["exploredface"] = false;
+			});		
+			planarmap.edges().forEach(function(f){
+				f.class["explorededge"] = false;
+			});		
+		}
+		var outerface = planarmap.faces().select(function(f){
+			return f.layout.outer;
+		});
+		var edge = outerface.edges[0];
+		do {
+			boundary.push(edge);
+			edge.edge.class["boundaryedge"]=true;
+			edge = edge.next();
+		} while (!edge.isEqual(outerface.edges[0]));
+		do {
+			targetvertex = planarmap.nodes().random();
+		} while( boundary.some(function(e){ 
+			return e.start() == targetvertex; })); 
+		targetvertex.class["targetnode"] = true;
+		CMap.graphDistance(planarmap,targetvertex,"distance");
+	}
+	view.updateLayers();
+}
+
+function doLazyPeeling(){
+	var peeledge = boundary[peelposition];
+	peeledge.edge.class["peeledge"]=false;
+	var reverseposition;
+	if( boundary.some(function(e,i){ reverseposition = i;
+		return e.isReverse(peeledge); }) )
+	{
+		// baby universe
+		if( reverseposition < peelposition )
+		{
+			// swap
+			var tmp = reverseposition;
+			reverseposition = peelposition;
+			peelposition = tmp;
+		}
+		var closestposition;
+		var closestdistance = Number.MAX_VALUE;
+		boundary.forEach(function(e,i){
+			var dist = e.start().attr.distance;
+			if( dist < closestdistance )
+			{
+				closestdistance = dist;
+				closestposition = i;
+			}
+		});
+		var babyboundary;
+		if( peelposition < closestposition 
+			&& closestposition <= reverseposition )
+		{
+			// baby universe is on the right of peeledge
+			babyboundary = boundary
+				.splice(reverseposition,Number.MAX_VALUE)
+				.concat(boundary.splice(0,peelposition+1));
+		} else
+		{
+			babyboundary = boundary.splice(peelposition,
+				reverseposition-peelposition+1);
+
+		}
+		babyboundary.forEach(function(e){
+			e.edge.class["boundaryedge"]=false;
+			e.edge.class["explorededge"]=true;
+		});
+		CMap.applyToDisk(planarmap,babyboundary,function(f){
+			f.class["exploredface"]=true;
+			f.edges.forEach(function(e){
+				if( !e.edge.class["boundaryedge"] )
+				{
+					e.edge.class["explorededge"] = true;
+				}
+			});
+		});
+	} else
+	{
+		// explore new face
+		peeledge.edge.class["boundaryedge"]=false;
+		peeledge.edge.class["explorededge"]=true;
+		peeledge.right().class["exploredface"]=true;
+		boundary.splice(peelposition,1);
+		var edge = peeledge.reverse().prev();
+		while( !edge.isReverse(peeledge) )
+		{
+			boundary.splice(peelposition,0,edge);
+			edge.edge.class["boundaryedge"]=true;
+			edge = edge.prev();
+		}
+	}
+}
+
+</script>
+</body>
+</html>
+

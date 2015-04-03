@@ -333,6 +333,15 @@ CMap.UIdContainer = function (prefix){
 			f(data[id]);
 		}
 	}
+	container.select = function(f){
+		for( var id in data )
+		{
+			if( f(data[id]) )
+			{
+				return data[id];
+			}
+		}
+	}
 	container.map = function(f){
 		var arr = [];
 		container.forEach(function(d){
