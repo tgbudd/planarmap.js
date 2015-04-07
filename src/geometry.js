@@ -533,3 +533,23 @@ CMap.polygonIsSimple = function(pol,outer){
 		return true;
 	});
 };
+// Assuming point is in face, return the closest corner (if any)
+// that contains the point in its angular region.
+CMap.pointToCorner = function(face,point) {
+	var result = {corner: null, distance: Number.MAX_VALUE};
+	face.edges.forEach(function(edge){
+		var tangent1 = CMap.getTangent(edge);
+		var tangent2 = CMap.getTangent(edge.prev().reverse());
+		if( edge.isReverse(edge.prev()) || 
+			point.minus(edge.start().pos).isInBetween(tangent1,tangent2) )
+		{
+			var dist = point.distance(edge.start().pos);
+			if( dist < result.distance )
+			{
+				result.distance = dist;
+				result.corner = edge;
+			}
+		}
+	});
+	return result;
+}

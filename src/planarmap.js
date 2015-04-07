@@ -471,8 +471,12 @@ CMap.PlanarMap = function (){
 	planarmap.numFaces = function(){
 		return faces.size();
 	}
-	planarmap.outerface = function(){
-		return outerface;
+	planarmap.outerface = function(face){
+		if( face === undefined ){
+			return outerface;
+		}
+		outerface = face;
+		return planarmap;
 	}
 	planarmap.newNode = function(){
 		return nodes.insert(new CMap.Node());
@@ -558,6 +562,13 @@ CMap.PlanarMap = function (){
 			e.left(newface);
 		});
 		doOnChange("insertDiagonal",function(f){f(edge,comments);});
+		if( edge.left.layout.outer )
+		{
+			outerface = edge.left;
+		}else if( edge.right.layout.outer )
+		{
+			outerface = edge.right;
+		}
 		return edge;
 	}
 	planarmap.splitEdge = function(orientededge){
@@ -619,6 +630,10 @@ CMap.PlanarMap = function (){
 			data["oldFace"] = rightface;
 		}
 		doOnChange("removeEdge",function(f){f(data);});
+		if( data.cornerEdge.left().layout.outer )
+		{
+			outerface = data.cornerEdge.left();
+		}
 		return planarmap;
 	}
 	planarmap.checkIncidence = function(){

@@ -15,11 +15,102 @@ CMap.View = function(map,targetsvg) {
 		helpLineLayer,
 		nodeLayer;
 		
+	var cornerradius = 0.4;
 	var cornersize = 0.5;
 	var nodeTextFunction = function(node){
 		return node.uid.substring(4);
 	}
+	
+	var allowFaceSelection = true;
+	var allowEdgeSelection = true;
+	var allowCornerSelection = true;
+	var allowNodeSelection = true;
+	var faceSelection = [];
+	var edgeSelection = [];
+	var cornerSelection = [];
+	var nodeSelection = [];
 
+	
+	function onFaceClick(face) {
+		var iscorner = false;
+		if( allowCornerSelection ) {
+			var relpos = d3.mouse(this);
+			var position = new Vec2(relpos[0],-relpos[1]);
+			var closest = CMap.pointToCorner(face,position);
+			if( closest.distance < cornerradius )
+			{
+				iscorner = true;
+				var name = closest.corner.reversed ?
+					"rightcornerselected" : "leftcornerselected";
+				if( d3.event.shiftKey ) {
+					if( closest.corner.edge.attr[name] ) {
+						cornerSelection.splice(
+							cornerSelection.indexOf(closest.corner),1);
+					} else {
+						cornerSelection.push(closest.corner);
+					}
+					closest.corner.edge.attr[name] = !closest.corner.edge.attr[name];
+				} else {
+					view.clearSelection();
+					closest.corner.edge.attr[name] = true;
+					cornerSelection.push(closest.corner);
+				}				
+			}
+		}
+		if( !iscorner && !face.layout.outer )
+		{
+			if( d3.event.shiftKey ) {
+				if( face.attr.selected ) {
+					faceSelection.splice(faceSelection.indexOf(face),1);
+				} else
+				{
+					faceSelection.push(face);
+				}
+				face.attr.selected = !face.attr.selected;
+			} else {
+				view.clearSelection();
+				face.attr.selected = true;
+				faceSelection.push(face);
+			}
+		}
+		view.updateLayers();
+	}
+	function onBackgroundClick() {
+		onFaceClick.call(this,planarmap.outerface());
+	}
+	function onEdgeClick(edge) {
+		if( d3.event.shiftKey ) {
+			if( edge.attr.selected ) {
+				edgeSelection.splice(edgeSelection.indexOf(edge),1);
+			} else {
+				edgeSelection.push(edge);
+			}
+			edge.attr.selected = !edge.attr.selected;
+		} else
+		{
+			view.clearSelection();
+			edge.attr.selected = true;
+			edgeSelection.push(edge);
+		}
+		view.updateLayers();
+	}
+	function onNodeClick(node) {
+		if( d3.event.shiftKey ) {
+			if( node.attr.selected ) {
+				nodeSelection.splice(nodeSelection.indexOf(node),1);
+			} else {
+				nodeSelection.push(node);
+			}
+			node.attr.selected = !node.attr.selected;
+		} else
+		{
+			view.clearSelection();
+			node.attr.selected = true;
+			nodeSelection.push(node);
+		}
+		view.updateLayers();
+	}
+	
 	function init(){
 		svg.selectAll("*").remove();
 		
@@ -28,7 +119,8 @@ CMap.View = function(map,targetsvg) {
 		backgroundLayer = globalGroup.append("g").attr("class","backgroundLayer");
 		backgroundRect = backgroundLayer.append("rect")
 			.attr("fill","white")
-			.attr("width","100%").attr("height","100%").attr("x",0).attr("y",0)
+			.attr("width",20).attr("height",20).attr("x",-10).attr("y",-10)
+			.on("click",onBackgroundClick);
 
 		faceLayer = globalGroup.append("g").attr("class","faceLayer");
 		cornerLayer = globalGroup.append("g").attr("class","cornerLayer");
@@ -51,7 +143,7 @@ CMap.View = function(map,targetsvg) {
 			svg.call(d3.behavior.zoom().on("zoom",function(){
 				globalGroup.attr("transform",
 					"scale(" + d3.event.scale + ")");
-			}));
+			})).on("dblclick.zoom", null);
 		} else
 		{
 			svg.on(".zoom", null);
@@ -63,6 +155,7 @@ CMap.View = function(map,targetsvg) {
 		view.updateFaceLayer();
 		view.updateEdgeLayer();
 		view.updateNodeLayer();
+		view.updateCornerLayer();
 		return view;
 	}
 	
@@ -72,8 +165,13 @@ CMap.View = function(map,targetsvg) {
 			function(f){ return f.uid; });
 	
 		var newfaces = facePaths.enter().append("path");
+		if( allowFaceSelection )
+		{
+			newfaces.on("click",onFaceClick);
+		}
 		facePaths.each(function(f){
 			d3.select(this).classed(f.class);
+			d3.select(this).classed("selected", !!f.attr.selected );
 		});
 				
 		view.updateFacePositions(newfaces);		
@@ -89,8 +187,13 @@ CMap.View = function(map,targetsvg) {
 				function(e){return e.uid;});
 			
 		var newedges = edgePaths.enter().append("path");
+		if( allowEdgeSelection )
+		{
+			newedges.on("click",onEdgeClick);
+		}
 		edgePaths.each(function(e){
 			d3.select(this).classed(e.class);
+			d3.select(this).classed("selected", !!e.attr.selected );
 		});
 		
 		view.updateEdgePositions(newedges);
@@ -112,9 +215,15 @@ CMap.View = function(map,targetsvg) {
 			
 		newNodeGroups.append("circle")
 			.attr("r","0.1");
+	
+		if( allowNodeSelection )
+		{
+			newNodeGroups.on("click",onNodeClick);
+		}
 
 		nodeGroups.select("circle").each(function(n){ 
 			d3.select(this).classed(n.class);
+			d3.select(this).classed("selected", !!n.attr.selected );
 		});
 		
 		newNodeGroups.append("text")
@@ -131,6 +240,31 @@ CMap.View = function(map,targetsvg) {
 		view.updateNodePositions(newNodeGroups);
 			
 		nodeGroups.exit().remove();
+		return view;
+	}
+	
+	view.updateCornerLayer = function()
+	{
+		var selectededges = [];
+		planarmap.edges().forEach(function(e){
+			if( e.attr.leftcornerselected )
+			{
+				selectededges.push( e.getOriented() );
+			}
+			if( e.attr.rightcornerselected )
+			{
+				selectededges.push( e.getOriented(true) );
+			}
+		});
+		var cornerPaths = cornerLayer.selectAll("path")
+			.data(selectededges,
+				function(e){return e.edge.uid + (e.reversed?"r":"l");});
+			
+		var newcorners = cornerPaths.enter().append("path");
+		
+		view.updateCornerPositions(newcorners);
+		
+		cornerPaths.exit().remove();
 		return view;
 	}
 	
@@ -190,13 +324,79 @@ CMap.View = function(map,targetsvg) {
 		return view;
 	}
 	
+	view.updateCornerPositions = function(corners){
+		corners = defaultFor(corners,cornerLayer.selectAll("path"));
+		
+		corners.attr("d", function(edge) {
+			if( edge.isReverse(edge.prev()) )
+			{
+				// Need full circle: treat as special case.
+				return "M " + edge.start().pos.x + " " + -edge.start().pos.y
+					+ " m " + -cornerradius + " 0"
+					+ " a " + cornerradius + " " + cornerradius + " 0 1 0 "
+							+ 2*cornerradius + " 0 "
+					+ " a " + cornerradius + " " + cornerradius + " 0 1 0 "
+							+ -2*cornerradius + " 0 "
+					+ " Z";
+			} else
+			{
+				var tangent1 = CMap.getTangent(edge)
+							   .normalize().mult(cornerradius),
+					tangent2 = CMap.getTangent(edge.prev().reverse())
+							   .normalize().mult(cornerradius);
+				return "M " + edge.start().pos.x + " " + -edge.start().pos.y
+					+ " l " + tangent1.x + " " + -tangent1.y
+					+ " a " + cornerradius + " " + cornerradius + " 0 "
+							+ ( tangent1.cross(tangent2) >= 0 ? "0" : "1" ) 
+							+ " 0 "	+ (tangent2.x - tangent1.x) + " "	
+							+ -(tangent2.y - tangent1.y)				 
+					+ " Z";
+			}
+		});
+		
+		return view;
+	}
+	
 	view.updatePositions = function(){
 		view.updateFacePositions();
 		view.updateEdgePositions();
 		view.updateNodePositions();
+		view.updateCornerPositions();
 		return view;
 	}
 	
+	view.getSelection = function(){
+		return {faces: faceSelection,
+			edges: edgeSelection,
+			nodes: nodeSelection,
+			corners: cornerSelection};
+	}
+	view.clearSelection = function(){
+		faceSelection.forEach(function(f){
+			f.attr.selected = false;			
+		});
+		faceSelection.splice(0,faceSelection.length);
+		edgeSelection.forEach(function(e){
+			e.attr.selected = false;
+		});
+		edgeSelection.splice(0,edgeSelection.length);
+		cornerSelection.forEach(function(c){
+			if( c.reversed )
+			{
+				c.edge.attr.rightcornerselected = false;
+			} else
+			{
+				c.edge.attr.leftcornerselected = false;
+			}
+		});
+		cornerSelection.splice(0,cornerSelection.length);
+		nodeSelection.forEach(function(n){
+			n.attr.selected = false;
+		});
+		nodeSelection.splice(0,nodeSelection.length);
+		view.updateLayers();
+	}
+
 	init();
 	return view;
 }

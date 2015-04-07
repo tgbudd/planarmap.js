@@ -57,7 +57,7 @@ CMap.getVerticesOnEdge = function(orientededge,includefirst,includelast) {
 	return vert;
 }
 CMap.getTangent = function(orientededge) {
-	if( orientededge.edge.layout.vert.length = 0 )
+	if( orientededge.edge.layout.vert.length == 0 )
 	{
 		return orientededge.end().pos.minus(orientededge.start().pos);
 	}

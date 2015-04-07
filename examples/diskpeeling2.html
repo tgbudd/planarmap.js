@@ -78,7 +78,7 @@ div#chart {
 }
 #chart .bar {
 	position: fixed;
-	width: 20px;
+	width: 16px;
 	bottom: 0px;
 	background: rgba(50, 50, 255, 0.4);
 	border: 0px;
@@ -133,6 +133,7 @@ d3.select("body").on("keydown",function(){
 		d3.select("#chart").style("display", showchart ? "block" : "none");
 	}
 });
+svg.on("click",function(){ doNext(); });
 
 var doPeeling = doLazyPeeling;
 var boundary = [];
@@ -265,8 +266,8 @@ function updateChart(){
 	bars.enter().append("div")
 		.attr("class","bar");
 	bars.exit().remove();
-	bars.style("height",function(d){ return d.length*10+"px";})
-		.style("left",function(d,i){ return i*22+"px";})
+	bars.style("height",function(d){ return d.length*6+"px";})
+		.style("left",function(d,i){ return i*18+"px";})
 		.style("background",function(d){ return (d.baby? 
 			"rgba(150, 180, 50, 0.4)":"rgba(50, 50, 255, 0.4)");})
 		.text(function(d){ return d.length;});

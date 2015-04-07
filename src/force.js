@@ -11,11 +11,12 @@ CMap.force = function (map){
 	var repulsionPower = 1.0;
 	var springLength = 1.0;
 	var springCoupling = 2.0;
-	var controlParam = 0.4;
+	var controlParam = 0.2;
 	var dragforce = {drag: false, coupling: 10};
 	var stretchforce = {stretch: false, coupling: 0.8, power: 2, 
 		anglescale: Math.PI/6 };
 	var running = false;
+	var numrunning = 0;
 	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
 	var minForceSq = 0.05;
 	
@@ -96,12 +97,12 @@ CMap.force = function (map){
 		var prev = e.start;
 		e.layout.vert.forEach(function(v,i){
 			var next = (i==e.layout.vert.length-1 ? e.end : e.layout.vert[i+1]);
-			energy += stretchForceVertices(prev,v,next);
+			energy += stretchForceVertices(prev,v,next,calcForce);
 			prev = v;
 		});
 		return energy;
 	}
-	function stretchForceVertices(prev,v,next){
+	function stretchForceVertices(prev,v,next,calcForce){
 		var bendangle = next.pos.minus(v.pos)
 			.angle(v.pos.minus(prev.pos));
 		/*
@@ -121,7 +122,7 @@ CMap.force = function (map){
 		var energy = stretchforce.coupling *
 			Math.pow(Math.tanh(Math.abs(bendangle/stretchforce.anglescale))
 			,stretchforce.power);
-		if( Math.abs(bendangle) > 0.01 )
+		if( calcForce && Math.abs(bendangle) > 0.01 )
 		{
 			var scale = - 2 * stretchforce.power * energy 
 				/ stretchforce.anglescale / Math.sinh( 2 * bendangle 
@@ -262,9 +263,11 @@ CMap.force = function (map){
 	force.tick = function() {
 		if( !running )
 		{
+			numrunning--;
 			return true;
 		}
-    	    	
+		
+    	
     	var stepsize = 0.004;
     	
     	// Accumulate force and calculate energy
@@ -289,7 +292,7 @@ CMap.force = function (map){
 		} else
 		{
 			var done = false;
-			var maxsteps = 50;
+			var maxsteps = 10;
 			while( maxsteps > 0 && !done ) {
 				var countmax = 0;
 				CMap.forEachVertex(planarmap,function(n){
@@ -308,11 +311,9 @@ CMap.force = function (map){
 				if( CMap.planarMapIsNonSimple(planarmap) )
 				{
 					stepsize *= 0.5;
-					console.log("nonsimple");
 				} else
 				{
 					var newenergy = force.energy(false);
-					//console.log(energy - newenergy, stepsize * gradSq);
 					if( energy - newenergy > controlParam * stepsize * gradSq )
 					{
 						done = true;
@@ -323,13 +324,9 @@ CMap.force = function (map){
 					}
 				}
 			}
-			if( maxsteps == 0 )
-			{
-				console.log("max steps");
-			}
 		}
-    	event.tick({type: "tick"});
-    	
+
+  		event.tick({type: "tick"});
     	return false;
   	};
   	
@@ -338,11 +335,11 @@ CMap.force = function (map){
   	};
 
   	force.resume = function() {
-   		if( !running )
+   		if( !running && numrunning == 0 )
   		{
-
 	  	    event.start({type: "start"});
 	  	    d3.timer(force.tick);
+	  	    numrunning++;
 	  	}
 	  	running = true;
     	return force;
