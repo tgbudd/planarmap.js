@@ -120,6 +120,7 @@ CMap.LayoutUpdater = function() {
 	var targetLinkLength = 1;
 	var minAuxVertices = 0;
 	var shrinkFactor = 0.7;
+	var onchange = function(){};
 	
 	function angleSection(prev,center,next,n,r)
 	{
@@ -144,6 +145,7 @@ CMap.LayoutUpdater = function() {
 			edge.end.pos = new Vec2(targetLinkLength/2,0);
 			edge.layout = new CMap.EdgeLayout();
 			edge.left.layout.outer = true;
+			onchange();
 		},
 		"insertEdgeNextTo": 
 		function(oredge){
@@ -160,6 +162,7 @@ CMap.LayoutUpdater = function() {
 					oredge.end().pos.minus(oredge.start().pos)
 					.mult(shrinkFactor));
 			}
+			onchange();
 		},	
 		"insertDiagonal":
 		function(edge,comments){
@@ -224,6 +227,7 @@ CMap.LayoutUpdater = function() {
 					}	
 				}
 			}
+			onchange();
 		},
 		"removeEdge":
 		function(data) {
@@ -231,6 +235,7 @@ CMap.LayoutUpdater = function() {
 			{
 				data.cornerEdge.left().layout.outer = true;
 			}
+			onchange();
 		}
 	};		
 	updater.registerAll = function(planarmap){
@@ -267,6 +272,9 @@ CMap.LayoutUpdater = function() {
 				}
 			}
 		});
+	}
+	updater.onChange = function(fun){
+		onchange = fun;
 	}
 	return updater;
 }

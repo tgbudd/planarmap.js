@@ -54,6 +54,46 @@ var crowbar = (function() {
     return SVGSources;
 
   }
+  
+  function downloadById(id,tags,fontstyle) {
+	var emptySvg = window.document.createElementNS(prefix.svg, 'svg');
+	window.document.body.appendChild(emptySvg);
+    var emptySvgDeclarationComputed = getComputedStyle(emptySvg);
+    body.removeChild(emptySvg);
+    
+    var svg = document.getElementById(id);
+    
+    svg.setAttribute("version", "1.1");
+
+	// removing attributes so they aren't doubled up
+	svg.removeAttribute("xmlns");
+	svg.removeAttribute("xlink");
+
+	// These are needed for the svg
+	if (!svg.hasAttributeNS(prefix.xmlns, "xmlns")) {
+	svg.setAttributeNS(prefix.xmlns, "xmlns", prefix.svg);
+	}
+
+	if (!svg.hasAttributeNS(prefix.xmlns, "xmlns:xlink")) {
+	svg.setAttributeNS(prefix.xmlns, "xmlns:xlink", prefix.xlink);
+	}
+
+	setInlineStyles(svg, emptySvgDeclarationComputed,tags,fontstyle);
+
+	var source = (new XMLSerializer()).serializeToString(svg);
+	var rect = svg.getBoundingClientRect();
+	var info = {
+		top: rect.top,
+		left: rect.left,
+		width: rect.width,
+		height: rect.height,
+		class: svg.getAttribute("class"),
+		id: svg.getAttribute("id"),
+		childElementCount: svg.childElementCount,
+		source: [doctype + source]
+	};
+	download(info);  
+  }
 
   function getSources(doc, emptySvgDeclarationComputed) {
     var svgInfo = [],
@@ -118,6 +158,7 @@ var crowbar = (function() {
     a.setAttribute("href", url);
     a.style["display"] = "none";
     a.click();
+    body.removeChild(a);
 
     setTimeout(function() {
       window.URL.revokeObjectURL(url);
@@ -125,7 +166,7 @@ var crowbar = (function() {
   }
 
 
-  function setInlineStyles(svg, emptySvgDeclarationComputed) {
+  function setInlineStyles(svg, emptySvgDeclarationComputed,tags,fontstyle) {
 
     function explicitlySetStyle (element) {
       var cSSStyleDeclarationComputed = getComputedStyle(element);
@@ -134,15 +175,24 @@ var crowbar = (function() {
       for (i=0, len=cSSStyleDeclarationComputed.length; i<len; i++) {
         key=cSSStyleDeclarationComputed[i];
         value=cSSStyleDeclarationComputed.getPropertyValue(key);
-        if (value!==emptySvgDeclarationComputed.getPropertyValue(key) && key != 'font-family') {
+        if (value!==emptySvgDeclarationComputed.getPropertyValue(key) 
+			&& key != 'font-family'	&& key != 'font-size'
+			&& (tags === undefined || tags.indexOf(key) > -1 ) ) {
           computedStyleStr+=key+":"+value+";";
         }
       }
       if (element.tagName == 'text' || element.tagName == 'tspan') {
-        computedStyleStr += 'font-size:'+cSSStyleDeclarationComputed.fontSize+';';
-        var fw = cSSStyleDeclarationComputed.fontWeight,
-            ff = 'NYTFranklin' + (fw == 300 || fw == 'light' ? 'Light' : fw > 400 || fw == 'bold' ? 'Bold' : 'Medium');
-        computedStyleStr += 'font-family:'+ff+';';
+		if( fontstyle !== undefined )
+		{
+			computedStyleStr += fontstyle;
+		} else {
+			computedStyleStr += 'font-size:' + cSSStyleDeclarationComputed.fontSize+';';
+			/*
+			var fw = cSSStyleDeclarationComputed.fontWeight,
+				ff = 'NYTFranklin' + (fw == 300 || fw == 'light' ? 'Light' : fw > 400 || fw == 'bold' ? 'Bold' : 'Medium');
+			*/
+			computedStyleStr += 'font-family:' + cSSStyleDeclarationComputed.fontFamily;
+		}
       }
       element.setAttribute('style', computedStyleStr);
     }
@@ -175,6 +225,7 @@ var crowbar = (function() {
   return{
     findAndParseSVGs:findAndParseSVGs,
     download:download,
-    prepareBlob:prepareBlob
+    prepareBlob:prepareBlob,
+    downloadById:downloadById
   }
 })();

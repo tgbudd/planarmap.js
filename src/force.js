@@ -17,9 +17,19 @@ CMap.force = function (map){
 		anglescale: Math.PI/6 };
 	var running = false;
 	var numrunning = 0;
+	var enabled = true;
 	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
 	var minForceSq = 0.05;
 	
+	force.enabled = function(x) {
+		if(!arguments.length) return enabled;
+		if( !x && running )
+		{
+			force.stop();
+		}
+		enabled = x;
+		return force;
+	};
 	force.repulsionPower = function(x) {
 		if (!arguments.length) return repulsionPower;
 		repulsionPower = x;
@@ -287,8 +297,9 @@ CMap.force = function (map){
 		}
 		if( gradSq / planarmap.numNodes() < minForceSq )
 		{
-			//force.stop();
-			//return true;
+			force.stop();
+			numrunning--;
+			return true;
 		} else
 		{
 			var done = false;
@@ -335,13 +346,16 @@ CMap.force = function (map){
   	};
 
   	force.resume = function() {
-   		if( !running && numrunning == 0 )
-  		{
-	  	    event.start({type: "start"});
-	  	    d3.timer(force.tick);
-	  	    numrunning++;
-	  	}
-	  	running = true;
+		if( enabled )
+		{
+			if( !running && numrunning == 0 )
+			{
+				event.start({type: "start"});
+				d3.timer(force.tick);
+				numrunning++;
+			}
+			running = true;
+		}
     	return force;
   	};
 

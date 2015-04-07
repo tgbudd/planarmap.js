@@ -164,6 +164,7 @@ var force = CMap.force(planarmap)
 		view.updatePositions();
 	})
 	.resume();
+layoutupdater.onChange(function(){ force.resume() });
 
 var control = CMap.ControlPanel(".panelcontainer");
 

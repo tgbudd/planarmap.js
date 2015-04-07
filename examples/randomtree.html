@@ -62,6 +62,7 @@ var force = CMap.force(planarmap)
 	.centerPull({pull: true, center: new Vec2(0,0), coupling: 0.1})
 	.on("tick",view.updatePositions)
 	.resume();
+layoutupdater.onChange(function(){ force.resume() });
 
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 32 ) // space

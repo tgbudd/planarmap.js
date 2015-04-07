@@ -10,7 +10,8 @@ CMap.ControlPanel = function(containerid){
 		var panel = {};
 		var closed = startclosed;
 		var paneldiv = container.append("div")
-			.attr("class","panel");
+			.attr("class","panel")
+			.classed({"closed":closed});
 		paneldiv.append("h2")
 			.text(title)
 			.on("click",function(){
@@ -44,6 +45,33 @@ CMap.ControlPanel = function(containerid){
 				});
 				
 			return panel;
+		}
+		panel.addToggle = function(labelstr,option1,option2,setget){
+			option1 = defaultFor(option1,"Off");
+			option2 = defaultFor(option2,"On");
+			var label = paneldiv.append("p").append("label")
+				.attr("class","switch-light switch-android");
+			var checkbox = label.append("input").attr("type","checkbox");
+			checkbox.property("checked",true);
+			label
+				.on("click",function(){
+
+					if( checkbox.property("checked") != setget() )
+					{
+						console.log( checkbox.property("checked") );
+						setget( checkbox.property("checked") );
+					}
+					onchange();
+				});
+
+			var span = label.append("span").text(labelstr);
+			span.append("span").text(option1);
+			span.append("span").text(option2);
+			label.append("a");
+			return panel;
+		}
+		panel.addEmpty = function(){
+			return paneldiv.append("p");
 		}
 		
 		return panel;

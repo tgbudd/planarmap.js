@@ -94,6 +94,7 @@ var force = CMap.force(planarmap)
 		view.updatePositions();
 	})
 	.resume();
+layoutupdater.onChange(function(){ force.resume() });
 
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 32 || d3.event.keyCode == 34 ) // space or page down
