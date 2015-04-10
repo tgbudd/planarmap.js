@@ -110,6 +110,7 @@ div#chart {
 <script src="../src/view.js"></script>
 <script src="../src/algorithms.js"></script>
 <script src="planarmap-large.jsonp"></script>
+<!--<script src="triangulation.jsonp"></script>-->
 <script>
 
 var svg = d3.select("#pmap").append("svg")
@@ -149,7 +150,7 @@ var positionshown = false;
 var peelposition = 0;
 var targetvertex = randomElement(planarmap.outerface().edges).start();
 var startface = planarmap.faces().get("face113");
-
+//var startface = planarmap.faces().get("face13");
 
 function nextPeelPosition(){
 	if( currentmethod == 0 ) { 

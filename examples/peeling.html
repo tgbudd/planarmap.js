@@ -110,6 +110,7 @@ var force = CMap.force(planarmap)
 		view.updatePositions();
 	})
 	.resume();
+layoutupdater.onChange(function(){ force.resume() });
 	
 var peelEdge = planarmap.edges().get("edge0").getOriented(true);
 peelEdge.start().attr.distance = 1;

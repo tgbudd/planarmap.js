@@ -624,16 +624,15 @@ CMap.PlanarMap = function (){
 			Array.prototype.splice.apply(leftface.edges,[leftindex,1]
 				.concat(rightface.edges.slice(rightindex+1))
 				.concat(rightface.edges.slice(0,rightindex)));
+			if( rightface.layout.outer ) {
+				leftface.layout.outer = true;
+			}
 			planarmap.faces().remove(rightface);
 			planarmap.edges().remove(edge);
 			data["wasDangling"] = false;
 			data["oldFace"] = rightface;
 		}
 		doOnChange("removeEdge",function(f){f(data);});
-		if( data.cornerEdge.left().layout.outer )
-		{
-			outerface = data.cornerEdge.left();
-		}
 		return planarmap;
 	}
 	planarmap.checkIncidence = function(){
