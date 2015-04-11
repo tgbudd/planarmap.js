@@ -269,8 +269,14 @@ CMap.triangulatePolygon = function(coor){
 	var ids = coor.map(function(x,i){return i;});
 	var diag = [];
 	var cur = 0;
+	var steps = 0;
 	while( c.length > 3 )
 	{ 
+		steps++;
+		if( steps > 1000 )
+		{
+			debugger;
+		}
 		var prevnext = [(cur+c.length-1)%c.length, (cur+1)%c.length];
 		if( c[prevnext[0]] != c[prevnext[1]] && CMap.isProperDiagonal(c, prevnext) )
 		{
@@ -357,24 +363,26 @@ CMap.findPathOutsidePolygon = function(coor,cornerIds,outerleft)
 	// Choose the vertex furthest away from the corners c
 	var distance = 0;
 	var index = 0;
+	var normal;
 	coor.forEach(function(p,i){
 		var d = p.copy().subVec(coor[cornerIds[0]]).norm() 
 			  + p.copy().subVec(coor[cornerIds[1]]).norm();
-		if( d > distance )
+		var next = coor[(i+1)%coor.length];
+		var prev = coor[(i+coor.length-1)%coor.length];
+		var n = p.minus(prev);
+		if( next != prev )
+		{
+			n = next.minus(p)
+						 .getBisector(prev.minus(p));
+		}
+		if( n.dot(p.minus(coor[cornerIds[0]])) > 0 && d > distance )
 		{
 			distance = d;
 			index = i;
+			normal = n;
 		}
 	});
 	
-	var next = coor[(index+1)%coor.length];
-	var prev = coor[(index+coor.length-1)%coor.length];
-	var normal = coor[index].minus(prev);
-	if( next != prev )
-	{
-		normal = next.minus(coor[index])
-					 .getBisector(prev.minus(coor[index]));
-	}
 	// Rearrange box to line up with the normal
 	if( normal.x <= 0 && normal.y > 0 )
 	{
