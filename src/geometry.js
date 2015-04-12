@@ -269,14 +269,8 @@ CMap.triangulatePolygon = function(coor){
 	var ids = coor.map(function(x,i){return i;});
 	var diag = [];
 	var cur = 0;
-	var steps = 0;
 	while( c.length > 3 )
 	{ 
-		steps++;
-		if( steps > 1000 )
-		{
-			debugger;
-		}
 		var prevnext = [(cur+c.length-1)%c.length, (cur+1)%c.length];
 		if( c[prevnext[0]] != c[prevnext[1]] && CMap.isProperDiagonal(c, prevnext) )
 		{

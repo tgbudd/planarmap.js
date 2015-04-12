@@ -12,7 +12,7 @@ CMap.force = function (map){
 	var springLength = 1.0;
 	var springCoupling = 2.0;
 	var controlParam = 0.2;
-	var dragforce = {drag: false, coupling: 10};
+	var dragforce = {drag: false, coupling: 40};
 	var stretchforce = {stretch: false, coupling: 0.8, power: 2, 
 		anglescale: Math.PI/6 };
 	var running = false;

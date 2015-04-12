@@ -30,6 +30,12 @@ CMap.View = function(map,targetsvg) {
 	var cornerSelection = [];
 	var nodeSelection = [];
 
+	var allowDrag = true;
+	var dragbehaviour = d3.behavior.drag()
+		.origin(function(d){return d;})
+		.on("drag", dragmove)
+		.on("dragstart", dragstart)
+		.on("dragend", dragend);
 	
 	function onFaceClick(face) {
 		var iscorner = false;
@@ -111,6 +117,30 @@ CMap.View = function(map,targetsvg) {
 		view.updateLayers();
 	}
 	
+	function dragstart(d)
+	{
+		if( allowDrag ) {
+			force.dragforce().drag = true;
+			force.dragforce().node = d;
+
+			var relpos = d3.mouse(nodeLayer.node());
+			force.dragforce().cursor = new Vec2(relpos[0],-relpos[1]);
+			force.resume();
+		}
+	}
+	function dragmove(d)
+	{
+		if( allowDrag && force.dragforce().drag ) {
+			var relpos = d3.mouse(nodeLayer.node());
+			force.dragforce().cursor = new Vec2(relpos[0],-relpos[1]);
+			force.resume();
+		}
+	}
+	function dragend(d)
+	{
+		force.dragforce().drag = false;
+	}
+	
 	function init(){
 		svg.selectAll("*").remove();
 		
@@ -150,7 +180,18 @@ CMap.View = function(map,targetsvg) {
 		}
 		return view;
 	}
-	
+	view.drag = function(usedrag){
+		usedrag = defaultFor(usedrag,true);
+		if( usedrag )
+		{
+			dragAllowed = true;
+		} else
+		{
+			dragAllowed = false;
+			force.dragforce().drag = false;
+		}
+		return view;
+	}
 	view.updateLayers = function(){
 		view.updateFaceLayer();
 		view.updateEdgeLayer();
@@ -220,6 +261,7 @@ CMap.View = function(map,targetsvg) {
 		{
 			newNodeGroups.on("click",onNodeClick);
 		}
+		newNodeGroups.call(dragbehaviour);
 
 		nodeGroups.select("circle").each(function(n){ 
 			d3.select(this).classed(n.class);
