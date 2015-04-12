@@ -303,6 +303,20 @@ d3.select("body").on("keydown",function(){
 			view.updateLayers();
 			view.updatePositions();
 		}	
+	} else if ( d3.event.keyCode == 83 ) // S
+	{
+		var selection = view.getSelection();
+		if( selection.faces.length == 0 &&
+			selection.nodes.length == 0 &&
+			selection.corners.length == 0 &&
+			selection.edges.length == 1 )	
+		{
+			var splitedge = selection.edges[0].getOriented();
+			view.clearSelection();
+			planarmap.splitEdge(splitedge);
+			view.updateLayers();
+			view.updatePositions();
+		}	
 	}
 });
 

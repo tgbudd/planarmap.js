@@ -584,7 +584,7 @@ CMap.PlanarMap = function (){
 		newnode.edges.push(newedge.getOriented());
 		newedge.end.edges[newedge.end.edgeIndex(orientededge.reverse())]
 			= newedge.getOriented(true);
-		doOnChange("splitEdge",function(f){f(newnode);});
+		doOnChange("splitEdge",function(f){f(orientededge);});
 		return newnode;
 	}
 	planarmap.removeEdge = function(edge){

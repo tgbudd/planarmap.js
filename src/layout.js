@@ -56,6 +56,22 @@ CMap.getVerticesOnEdge = function(orientededge,includefirst,includelast) {
 	}
 	return vert;
 }
+CMap.popAuxiliaryVertex = function(orientededge) {
+	if( orientededge.reversed )
+	{
+		return orientededge.edge.layout.vert.splice(0,1)[0];
+	}
+	return orientededge.edge.layout.vert.pop();
+}
+CMap.pushAuxiliaryVertex = function(orientededge,v) {
+	if( orientededge.reversed )
+	{
+		orientededge.edge.layout.vert.splice(0,0,v);
+	} else
+	{
+		orientededge.edge.layout.vert.push(v);
+	}
+}
 CMap.getTangent = function(orientededge) {
 	if( orientededge.edge.layout.vert.length == 0 )
 	{
@@ -75,6 +91,19 @@ CMap.getAuxiliaryVertices = function(planarmap){
 		planarmap.edges().map(function(edge){
 			return CMap.getVerticesOnEdge(edge.getOriented(),false,false);
 		}));
+}
+CMap.getEdgeLength = function(edge) {
+	if( edge instanceof CMap.Edge )
+	{
+		edge = edge.getOriented();
+	}
+	var vert = CMap.getVerticesOnEdge(edge,true,true);
+	var length = 0;
+	for(var i=0;i<vert.length-1;i++)
+	{
+		length += vert[i].distance(vert[i+1]);
+	}
+	return length;
 }
 CMap.getFacePolygon = function(face,startedge) {
 	var index = 0;
@@ -236,6 +265,51 @@ CMap.LayoutUpdater = function() {
 				data.cornerEdge.left().layout.outer = true;
 			}
 			onchange();
+		},
+		"splitEdge":
+		function(orientededge) {
+			var vert = CMap.getVerticesOnEdge(orientededge,false,false);
+			if( vert.length == 0 )
+			{
+				orientededge.end().pos = orientededge.next().end().pos
+					.plus(orientededge.start().pos).mult(0.5);
+			} else
+			{
+				var prevvert = orientededge.start().pos;
+				var length = 0;
+				vert.forEach(function(v){
+					length += prevvert.distance(v.pos);
+					prevvert = v.pos;
+				});
+				length += prevvert.distance(orientededge.next().end().pos);
+				var targetlength = 0.5*length;
+				var mindist = length;
+				var closestindex;
+				prevvert = orientededge.start().pos;
+				length = 0;
+				vert.forEach(function(v,i){
+					length += prevvert.distance(v.pos);
+					if( Math.abs(length - targetlength) < mindist )
+					{
+						mindist = Math.abs(length - targetlength);
+						closestindex = i;
+					}
+					prevvert = v.pos;
+				});	
+				
+				orientededge.end().pos = vert[closestindex].pos;
+				// Move the rest of the auxiliary vertices to orientededge.next()
+				while( true )
+				{
+					var movevert = CMap.popAuxiliaryVertex(orientededge);
+					if( movevert == vert[closestindex] )
+					{
+						break;
+					}
+					CMap.pushAuxiliaryVertex(orientededge.next().reverse(),
+						movevert);
+				}
+			}
 		}
 	};		
 	updater.registerAll = function(planarmap){
