@@ -258,6 +258,23 @@ CMap.LayoutUpdater = function() {
 			}
 			onchange();
 		},
+		"splitVertex":
+		function(oredge){
+			var prevEdge = oredge.prev().reverse();
+			var nextEdge = oredge.reverse().next();
+			var vprev = CMap.getVerticesOnEdge(prevEdge);
+			var vnext = CMap.getVerticesOnEdge(nextEdge);
+			oredge.end().pos = angleSection(
+				vprev[1].pos,vprev[0].pos,
+				vnext[1].pos,1,0.5*targetLinkLength)[0];			
+			while( CMap.faceIsNonSimple(oredge.left()) || CMap.faceIsNonSimple(oredge.right()) )
+			{
+				oredge.end().pos = oredge.start().pos.plus(
+					oredge.end().pos.minus(oredge.start().pos)
+					.mult(shrinkFactor));
+			}
+			onchange();
+		},
 		"removeEdge":
 		function(data) {
 			if( !data.wasDangling && data.oldFace.layout.outer )

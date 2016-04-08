@@ -571,6 +571,39 @@ CMap.PlanarMap = function (){
 		}
 		return edge;
 	}
+	planarmap.splitVertex = function(corners){
+		var node = corners[0].start();
+		var indices = corners.map(function(ind){
+			return node.edgeIndex(ind);
+		});	
+		var newnode = planarmap.newNode();
+		var edge = planarmap.newEdge(node,newnode,
+			corners[1].left(),corners[0].left());
+		corners[1].left().insertEdgeBefore(corners[1],
+			edge.getOriented());
+		corners[0].left().insertEdgeBefore(corners[0],
+			edge.getOriented(true));
+
+		if( indices[0] <= indices[1] )
+		{
+			newnode.edges = node.edges.splice(indices[0]+1,
+				indices[1]-indices[0]);
+			node.edges.splice(indices[0]+1,0,edge.getOriented());
+			newnode.edges.push(edge.getOriented(true));
+		}else
+		{
+			newnode.edges = node.edges.splice(indices[0]+1,
+				node.edges.length - indices[0]-1)
+				.concat(node.edges.splice(0,indices[1]+1));
+			node.edges.push(edge.getOriented());
+			newnode.edges.push(edge.getOriented(true));			
+		}
+		newnode.edges.forEach(function(e){
+			e.start(newnode);
+		});	
+		doOnChange("splitVertex",function(f){f(edge.getOriented());});
+		return edge;
+	}
 	planarmap.splitEdge = function(orientededge){
 		var newnode = planarmap.newNode();
 		var newedge = planarmap.newEdge(newnode,orientededge.end(),

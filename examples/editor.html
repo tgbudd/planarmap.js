@@ -374,13 +374,22 @@ d3.select("body").on("keydown",function(){
 			planarmap.splitEdge(splitedge);
 			view.updateLayers();
 			view.updatePositions();
-		}/* else if( selection.faces.length == 0 &&
+		} else if( selection.faces.length == 0 &&
 			selection.nodes.length == 0 &&
 			selection.corners.length == 2 &&
 			selection.edges.length == 0 )	
 		{
-			selection.corners
-		}*/	
+			if( selection.corners[0].start() ==
+				selection.corners[1].start() )
+			{
+				var corner1 = selection.corners[0],
+					corner2 = selection.corners[1];
+				view.clearSelection();
+				planarmap.splitVertex([corner1,corner2]);
+				view.updateLayers();
+				view.updatePositions();
+			}
+		}	
 	}
 });
 
