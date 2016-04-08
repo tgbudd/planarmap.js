@@ -304,6 +304,7 @@ CMap.View = function(map,targetsvg) {
 			
 		var newcorners = cornerPaths.enter().append("path");
 		
+
 		view.updateCornerPositions(newcorners);
 		
 		cornerPaths.exit().remove();
@@ -437,6 +438,14 @@ CMap.View = function(map,targetsvg) {
 		});
 		nodeSelection.splice(0,nodeSelection.length);
 		view.updateLayers();
+	}
+	view.addFaceSelection = function(fun){
+		planarmap.faces().forEach(function(f){
+			if( fun(f) )
+			{
+				f.attr.selected = true;
+			}
+		})
 	}
 
 	init();

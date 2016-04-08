@@ -28,7 +28,7 @@ svg path.edge.selected {
 }
 svg path.face {
 	stroke: none;
-	fill: #aaaaff;
+	fill: #ccccff;
 }
 svg path.face.selected {
 	stroke: none;
@@ -37,6 +37,7 @@ svg path.face.selected {
 svg .cornerLayer path {
 	stroke: none;
 	fill: #ff2222;
+	pointer-events: none;
 }
 svg text.label {
 	pointer-events: none;
@@ -221,6 +222,7 @@ var filedownload = filepanel.addEmpty();
 filedownload.append("input").attr("type","button")
 	.attr("value","Download JSON")
 	.on("click",function(){
+		view.clearSelection();
 		downloadfile("map.json",JSON.stringify(planarmap));
 
 	});
@@ -232,7 +234,11 @@ var svgdownload = filepanel.addEmpty()
 		var div = d3.select("body").append("div")
 			.style("display","none")
 			.html(content);
-		div.select("svg").attr("id","svgcopy");
+		div.select(".backgroundLayer").remove();
+		div.select(".helpLineLayer").remove();
+		div.select("svg").attr("id","svgcopy")
+			.append("jsondata").text("<[!CDATA[" + 
+				JSON.stringify(planarmap) + "]]>");
 		
 		crowbar.downloadById("svgcopy",
 			["stroke","stroke-width","fill"],
@@ -246,6 +252,14 @@ var svgdownload = filepanel.addEmpty()
 			crowbar.download(sources[0]);
 		}*/
 	});
+filepanel.addEmpty()
+	.append("input").attr("type","button")
+	.attr("value","Clear (single edge map)")
+	.on("click",function(){
+		planarmap.singleEdgeMap();
+		view.updateLayers();
+		view.updatePositions();
+	});
 
 control.addPanel("forcelayout","Force layout",
 	true, function(){ force.resume(); })
@@ -255,6 +269,50 @@ control.addPanel("forcelayout","Force layout",
 	.addSlider("Spring length","springlength",
 		force.springLength, 0.2, 2.5, 0.1);	
 
+function getAllClasses(map) {
+	var classes = {};
+	function addclass(f){
+		for( thisclass in f.class )
+		{
+			classes[thisclass] = classes[thisclass] || f.class[thisclass];
+		}
+	}
+	map.faces().forEach(addclass);
+	map.edges().forEach(addclass);
+	map.nodes().forEach(addclass);
+
+	return Object.keys(classes);
+}
+
+var classes = getAllClasses(planarmap);
+var selectpanel = control.addPanel("select","Selection",true);
+
+selectpanel.addEmpty()
+	.append("input").attr("type","button")
+	.attr("value","Select none")
+	.on("click",function(){
+		view.clearSelection();
+	}); 
+var dropdown = selectpanel.addEmpty()
+	.append("select")
+	.on("focus",function(){
+		d3.select(this).selectAll("option.selectoption")
+			.data(classes)
+			.enter().append("option")
+			.attr("class","selectoption")
+			.text("hallo")
+			.attr("value",function(d){ return d;})
+			.text(function(d){return d;});
+	})
+	.on("change",function(){
+		view.clearSelection();
+		
+		console.log(this.value !== "");
+	})
+	.append("option")
+	.attr("class","selectheader")
+	.text("Select all of class")
+	.attr("value","");
 
 
 d3.select("body").on("keydown",function(){
@@ -316,7 +374,13 @@ d3.select("body").on("keydown",function(){
 			planarmap.splitEdge(splitedge);
 			view.updateLayers();
 			view.updatePositions();
-		}	
+		}/* else if( selection.faces.length == 0 &&
+			selection.nodes.length == 0 &&
+			selection.corners.length == 2 &&
+			selection.edges.length == 0 )	
+		{
+			selection.corners
+		}*/	
 	}
 });
 

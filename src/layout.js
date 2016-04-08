@@ -310,6 +310,7 @@ CMap.LayoutUpdater = function() {
 						movevert);
 				}
 			}
+			onchange();
 		}
 	};		
 	updater.registerAll = function(planarmap){

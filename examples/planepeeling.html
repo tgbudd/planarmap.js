@@ -52,6 +52,9 @@ svg circle.node {
 svg circle.explorednode {
 	fill: #404040;
 }
+svg circle.node.fullyexplored {
+	fill: #40f040;
+}
 svg circle.targetnode {
 	fill: #ffffff;
 	stroke: #0000ff;
@@ -140,9 +143,23 @@ d3.select("body").on("keydown",function(){
 		currentmethod = (currentmethod+1)%3;
 		d3.select("#title").select("p").text("Method: " + 
 		["uniform","dual breadth-first","breadth-first"][currentmethod]);
+	} else if ( d3.event.keyCode == 86 ) // V
+	{
+		planarmap.nodes().forEach(function(n){
+			if( n.edges.every(function(e){
+				return !!e.edge.class["explorededge"];
+			}) )
+			{
+				n.class["fullyexplored"] = true;
+			}
+		});
+		view.updateLayers();
 	}
 });
-svg.on("click",function(){ doNext(); });
+svg.on("click",function(){ 
+	if (d3.event.defaultPrevented) return; 
+	doNext(); 
+});
 
 var doPeeling = doLazyPeeling;
 var boundary = [];
@@ -151,6 +168,19 @@ var peelposition = 0;
 var targetvertex = randomElement(planarmap.outerface().edges).start();
 var startface = planarmap.faces().get("face113");
 //var startface = planarmap.faces().get("face13");
+
+d3.selectAll("path.edge").on("click",function(e){
+	if( !positionshown && e.class.boundaryedge )
+	{
+		d3.event.preventDefault();
+		for(peelposition=0;boundary[peelposition].edge != e;peelposition++){
+		}
+		e.class["peeledge"]=true;
+		positionshown = true;
+		view.updateLayers();
+	} 
+})
+
 
 function nextPeelPosition(){
 	if( currentmethod == 0 ) { 

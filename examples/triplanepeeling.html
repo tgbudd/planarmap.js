@@ -17,8 +17,8 @@ html, body {
 	left: 0;
 }
 svg path.edge {
-	stroke: #202020;
-	stroke-width: 0.04;
+	stroke: #c0c0c0;
+	stroke-width: 0.03;
 	fill: none;
 }
 svg path.boundaryedge {
@@ -30,16 +30,16 @@ svg path.peeledge {
 	stroke-width: 0.08;
 }
 svg path.explorededge {
-	stroke: #c0c0c0;
-	stroke-width: 0.03;
+	stroke: #404040;
+	stroke-width: 0.05;
 }
 svg path.face {
 	stroke: none;
-	fill: #bbbbff;
+	fill: #f0f0f0;
 }
 svg path.exploredface {
 	stroke: none;
-	fill: #f0f0f0;
+	fill: #a0a0f0;
 }
 svg text.label {
 	pointer-events: none;
@@ -47,7 +47,13 @@ svg text.label {
 	font-size: 0.3;
 }
 svg circle.node {
+	fill: #c0c0c0;
+}
+svg circle.explorednode {
 	fill: #404040;
+}
+svg circle.node.fullyexplored {
+	fill: #40f040;
 }
 svg circle.targetnode {
 	fill: #ffffff;
@@ -91,9 +97,8 @@ div#chart {
 <body>
 	
 <div id="title">
-	<h1>Lazy peeling of a pointed disk</h1>
-	<!--<p>Controls: SPACE = <a href="javascript:void(0)" onclick="doNext();">next</a>,
-		mouse wheel/pinch = zoom.</p>-->
+	<h1>Lazy peeling of an infinite planar map</h1>
+	<p>Method: uniform</p>
 </div>
 
 <div class="panelcontainer"></div>
@@ -107,14 +112,15 @@ div#chart {
 <script src="../src/planarmap.js"></script>
 <script src="../src/view.js"></script>
 <script src="../src/algorithms.js"></script>
-<script src="bipartitemap.jsonp"></script>
+<!--<script src="planarmap-large.jsonp"></script>-->
+<script src="triangulation.jsonp"></script>
 <script>
 
 var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
 	.attr("height","100%")
-	.attr("viewBox","-11 -5 22 12")
+	.attr("viewBox","-5 -5 10 9")
 	.attr("preserveAspectRatio", "xMidYMid meet")	
 	
 var planarmap = CMap.PlanarMap().fromJSON(mapdata);
@@ -122,7 +128,8 @@ var planarmap = CMap.PlanarMap().fromJSON(mapdata);
 var view = CMap.View(planarmap,svg).zoom();
 view.nodeText().updateLayers();
 
-var showchart = true;
+var showchart = false;
+var currentmethod = 0;
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 32 || d3.event.keyCode == 34 ) // space or page down
 	{
@@ -131,61 +138,131 @@ d3.select("body").on("keydown",function(){
 	{
 		showchart = !showchart;
 		d3.select("#chart").style("display", showchart ? "block" : "none");
+	} else if ( d3.event.keyCode == 77 ) // M
+	{
+		currentmethod = (currentmethod+1)%3;
+		d3.select("#title").select("p").text("Method: " + 
+		["uniform","dual breadth-first","breadth-first"][currentmethod]);
+	} else if ( d3.event.keyCode == 86 ) // V
+	{
+		planarmap.nodes().forEach(function(n){
+			if( n.edges.every(function(e){
+				return !!e.edge.class["explorededge"];
+			}) )
+			{
+				n.class["fullyexplored"] = true;
+			}
+		});
+		view.updateLayers();
 	}
 });
-svg.on("click",function(){ doNext(); });
+svg.on("click",function(){ 
+	if (d3.event.defaultPrevented) return; 
+	doNext(); 
+});
 
 var doPeeling = doLazyPeeling;
 var boundary = [];
-var peelposition = -1;
-var targetvertex;
+var positionshown = false;
+var peelposition = 0;
+var targetvertex = randomElement(planarmap.outerface().edges).start();
+//var startface = planarmap.faces().get("face113");
+var startface = planarmap.faces().get("face13");
+
+d3.selectAll("path.edge").on("click",function(e){
+	if( !positionshown && e.class.boundaryedge )
+	{
+		d3.event.preventDefault();
+		for(peelposition=0;boundary[peelposition].edge != e;peelposition++){
+		}
+		e.class["peeledge"]=true;
+		positionshown = true;
+		view.updateLayers();
+	} 
+})
+
+
+function nextPeelPosition(){
+	if( currentmethod == 0 ) { 
+		// uniform peeling
+		return getRandomInt(0,boundary.length-1);
+	} else if( currentmethod == 1 ) {
+		// peel by dual distance
+		var nextpos = peelposition;
+		var mindist = boundary[peelposition].left().attr.distfromstart;
+		boundary.forEach(function(e,i){
+			if( e.left().attr.distfromstart < mindist )
+			{
+				mindist = e.left().attr.distfromstart;
+				nextpos = i;
+			}
+		});
+		return nextpos;	
+	} else if( currentmethod == 2 ) {
+		// peel by distance
+		var nextpos = peelposition;
+		var mindist = boundary[peelposition].end().attr.distfromstart;
+		boundary.forEach(function(e,i){
+			if( e.end().attr.distfromstart < mindist )
+			{
+				mindist = e.end().attr.distfromstart;
+				nextpos = i;
+			}
+		});
+		return nextpos;	
+	}
+}
 
 function doNext(){
-	if( boundary.length > 0 )
+	if( boundary.length > 0 && !(positionshown && 
+		boundary[peelposition].right().layout.outer) )
 	{
-		if( peelposition === -1 )
+		if( !positionshown )
 		{
-			peelposition = getRandomInt(0,boundary.length-1);
+			peelposition = nextPeelPosition();
 			boundary[peelposition].edge.class["peeledge"]=true;
+			positionshown = true;
 		} else
 		{
 			var wasbaby = doPeeling();
 			addLengthData(boundary.length,wasbaby);
-			peelposition = -1;
-
+			positionshown = false;
 		}
 	} else
 	{
-		if( targetvertex instanceof CMap.Node )
-		{
-			targetvertex.class["targetnode"] = false;
-			planarmap.faces().forEach(function(f){
-				f.class["exploredface"] = false;
-			});		
-			planarmap.edges().forEach(function(f){
-				f.class["explorededge"] = false;
-			});		
-		}
-		var outerface = planarmap.faces().select(function(f){
-			return f.layout.outer;
+		planarmap.faces().forEach(function(f){
+			f.class["exploredface"] = false;
+		});		
+		planarmap.edges().forEach(function(f){
+			f.class["explorededge"] = false;
+			f.class["boundaryedge"] = false;
+			f.class["peeledge"] = false;
 		});
-		var edge = outerface.edges[0];
+		planarmap.nodes().forEach(function(n){
+			n.class["explorednode"] = false;
+		});
+		boundary.splice(0,boundary.length);		
+		var edge = startface.edges[0];
+		startface.class["exploredface"] = true;
 		do {
 			boundary.push(edge);
 			edge.edge.class["boundaryedge"]=true;
+			edge.start().class["explorednode"]=true;
 			edge = edge.next();
-		} while (!edge.isEqual(outerface.edges[0]));
-		do {
-			targetvertex = planarmap.nodes().random();
-		} while( boundary.some(function(e){ 
-			return e.start() == targetvertex; })); 
+		} while (!edge.isEqual(startface.edges[0]));
 		targetvertex.class["targetnode"] = true;
 		CMap.graphDistance(planarmap,targetvertex,"distance");
+		CMap.dualGraphDistance(planarmap,startface,"distfromstart");
+		CMap.graphDistance(planarmap,boundary[0].start(),"distfromstart");
+		positionshown = false;
+		peelposition = 0;
 		clearLengthData();
 		addLengthData(boundary.length,false);
 	}
 	view.updateLayers();
 }
+
+
 
 function doLazyPeeling(){
 	var peeledge = boundary[peelposition];
@@ -220,11 +297,15 @@ function doLazyPeeling(){
 			babyboundary = boundary
 				.splice(reverseposition,Number.MAX_VALUE)
 				.concat(boundary.splice(0,peelposition+1));
+			peelposition = 0;
 		} else
 		{
 			babyboundary = boundary.splice(peelposition,
 				reverseposition-peelposition+1);
-
+			if( peelposition >= boundary.length )
+			{
+				peelposition = 0;
+			}
 		}
 		babyboundary.forEach(function(e){
 			e.edge.class["boundaryedge"]=false;
@@ -237,6 +318,7 @@ function doLazyPeeling(){
 				{
 					e.edge.class["explorededge"] = true;
 				}
+				e.start().class["explorednode"] = true;
 			});
 		});
 		return true;
@@ -246,6 +328,9 @@ function doLazyPeeling(){
 		peeledge.edge.class["boundaryedge"]=false;
 		peeledge.edge.class["explorededge"]=true;
 		peeledge.right().class["exploredface"]=true;
+		peeledge.right().edges.forEach(function(e){
+			e.start().class["explorednode"]=true;
+		});
 		boundary.splice(peelposition,1);
 		var edge = peeledge.reverse().prev();
 		while( !edge.isReverse(peeledge) )
@@ -253,6 +338,12 @@ function doLazyPeeling(){
 			boundary.splice(peelposition,0,edge);
 			edge.edge.class["boundaryedge"]=true;
 			edge = edge.prev();
+		}
+		if( currentmethod == 1 ) {
+			peelposition = (peelposition + edge.left().edges.length - 1)
+				%boundary.length;
+		} else if( currentmethod == 2 ) {
+			peelposition = peelposition + edge.left().edges.length - 2;
 		}
 		return false;
 	}
@@ -280,6 +371,8 @@ function clearLengthData(l){
 	lengthdata.splice(0,lengthdata.length);
 	updateChart();
 }
+
+doNext();
 
 </script>
 </body>

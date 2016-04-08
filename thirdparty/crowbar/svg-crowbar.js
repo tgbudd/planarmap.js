@@ -194,7 +194,10 @@ var crowbar = (function() {
 			computedStyleStr += 'font-family:' + cSSStyleDeclarationComputed.fontFamily;
 		}
       }
-      element.setAttribute('style', computedStyleStr);
+      if( element.tagName != 'jsondata' )
+      {
+		element.setAttribute('style', computedStyleStr);
+	  }
     }
     function traverse(obj){
       var tree = [];

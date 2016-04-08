@@ -284,10 +284,15 @@ CMap.force = function (map){
     	var energy = force.energy(true);
     	var gradSq = 0;
     	var maxForce = 0;
+    	var numUnfixed = 0;
 		CMap.forEachVertex(planarmap,function(n){
 			n.oldpos = n.pos.copy();
-			gradSq += n.force.normSq();
-			maxForce=Math.max(maxForce,n.force.normSq());
+			if( !n.layout || !n.layout.fixed )
+			{
+				gradSq += n.force.normSq();
+				maxForce=Math.max(maxForce,n.force.normSq());
+				numUnfixed++;
+			}
 		});
 		maxForce = Math.sqrt(maxForce);
 		var maxDisplacement = 0.1;
@@ -295,7 +300,7 @@ CMap.force = function (map){
 		{
 			stepsize = Math.min(stepsize,2.0/maxForce);
 		}
-		if( gradSq / planarmap.numNodes() < minForceSq )
+		if( gradSq / numUnfixed < minForceSq )
 		{
 			force.stop();
 			numrunning--;
@@ -307,13 +312,16 @@ CMap.force = function (map){
 			while( maxsteps > 0 && !done ) {
 				var countmax = 0;
 				CMap.forEachVertex(planarmap,function(n){
-					var displ = n.force.copy().mult(stepsize);
-					if( displ.normSq() > maxDisplacement*maxDisplacement )
+					if( !n.layout || !n.layout.fixed )
 					{
-						displ.normalize().mult(maxDisplacement);
-						countmax++;
+						var displ = n.force.copy().mult(stepsize);
+						if( displ.normSq() > maxDisplacement*maxDisplacement )
+						{
+							displ.normalize().mult(maxDisplacement);
+							countmax++;
+						}
+						n.pos = n.oldpos.plus(displ);
 					}
-					n.pos = n.oldpos.plus(displ);
 				});
 				if( countmax > 0 )
 				{
