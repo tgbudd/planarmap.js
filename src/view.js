@@ -15,8 +15,21 @@ CMap.View = function(map,targetsvg) {
 		helpLineLayer,
 		nodeLayer;
 		
-	var cornerradius = 0.4;
-	var cornersize = 0.5;
+	var cornerradius = 7.0;
+	var cornersize = 7.0;
+	var zoomfactor = 20.0;
+	var screenToMapCoor = function(screenvec,y){
+		if( Array.isArray(screenvec) )
+			return new Vec2(screenvec[0]/zoomfactor,-screenvec[1]/zoomfactor);
+		else if( screenvec instanceof Vec2 )
+			return new Vec2(screenvec.x/zoomfactor,-screenvec.y/zoomfactor);
+		else
+			return new Vec2(screenvec/zoomfactor,-y/zoomfactor);
+	}
+	var mapToScreenCoor = function(mapvec){
+		return new Vec2(mapvec.x * zoomfactor,-mapvec.y * zoomfactor);
+	}
+	
 	var nodeTextFunction = function(node){
 		return node.uid.substring(4);
 	}
@@ -41,9 +54,9 @@ CMap.View = function(map,targetsvg) {
 		var iscorner = false;
 		if( allowCornerSelection ) {
 			var relpos = d3.mouse(this);
-			var position = new Vec2(relpos[0],-relpos[1]);
+			var position = screenToMapCoor(relpos);
 			var closest = CMap.pointToCorner(face,position);
-			if( closest.distance < cornerradius )
+			if( closest.distance * zoomfactor < cornerradius )
 			{
 				iscorner = true;
 				var name = closest.corner.reversed ?
@@ -124,7 +137,7 @@ CMap.View = function(map,targetsvg) {
 			force.dragforce().node = d;
 
 			var relpos = d3.mouse(nodeLayer.node());
-			force.dragforce().cursor = new Vec2(relpos[0],-relpos[1]);
+			force.dragforce().cursor = screenToMapCoor(relpos);
 			force.resume();
 		}
 	}
@@ -132,7 +145,7 @@ CMap.View = function(map,targetsvg) {
 	{
 		if( allowDrag && force.dragforce().drag ) {
 			var relpos = d3.mouse(nodeLayer.node());
-			force.dragforce().cursor = new Vec2(relpos[0],-relpos[1]);
+			force.dragforce().cursor = screenToMapCoor(relpos);
 			force.resume();
 		}
 	}
@@ -149,7 +162,7 @@ CMap.View = function(map,targetsvg) {
 		backgroundLayer = globalGroup.append("g").attr("class","backgroundLayer");
 		backgroundRect = backgroundLayer.append("rect")
 			.attr("fill","white")
-			.attr("width",20).attr("height",20).attr("x",-10).attr("y",-10)
+			.attr("width",400).attr("height",400).attr("x",-200).attr("y",-200)
 			.on("click",onBackgroundClick);
 
 		faceLayer = globalGroup.append("g").attr("class","faceLayer");
@@ -255,7 +268,7 @@ CMap.View = function(map,targetsvg) {
 			.attr("class","node");
 			
 		newNodeGroups.append("circle")
-			.attr("r","0.1");
+			.attr("r","2");
 	
 		if( allowNodeSelection )
 		{
@@ -269,8 +282,8 @@ CMap.View = function(map,targetsvg) {
 		});
 		
 		newNodeGroups.append("text")
-				.attr("dx",0.14)
-				.attr("dy",-0.1)
+				.attr("dx",2.8)
+				.attr("dy",-2)
 				.attr("class","label")
 				.style("text-anchor","start");
 				
@@ -315,7 +328,7 @@ CMap.View = function(map,targetsvg) {
 	{
 		includeMoveTo = defaultFor(includeMoveTo,true);
 		function coorstr(p) { 
-			return p.x + " " + (-p.y);
+			return p.x + " " + p.y;
 		}
 		var p = (includeMoveTo?"M " + coorstr(path[0]):"");
 		
@@ -339,7 +352,7 @@ CMap.View = function(map,targetsvg) {
 			var first = true;
 			return d.edges.map(function(edge){
 					var coor = CMap.getVerticesOnEdge(edge,true,true)
-						.map(function(v){return v.pos;});
+						.map(function(v){return mapToScreenCoor(v.pos);});
 					var path = roundCornerPath(coor, cornersize, first);
 					first = false;
 					return path;
@@ -353,7 +366,7 @@ CMap.View = function(map,targetsvg) {
 		
 		edges.attr("d", function(edge) {
 				var coor = CMap.getVerticesOnEdge(edge.getOriented(),true,true)
-					.map(function(v){return v.pos;});
+					.map(function(v){return mapToScreenCoor(v.pos);});
 				return roundCornerPath(coor, cornersize);
 			});
 		return view;
@@ -362,19 +375,22 @@ CMap.View = function(map,targetsvg) {
 	view.updateNodePositions = function(nodegroups){
 		nodegroups = defaultFor(nodegroups,nodeLayer.selectAll("g.node"));
 		nodegroups.attr("transform", function(d){
-			return "translate(" + d.pos.x + "," + (-d.pos.y) + ")";
+			var coor = mapToScreenCoor(d.pos);
+			return "translate(" + coor.x + "," + coor.y + ")";
 		});
 		return view;
 	}
 	
 	view.updateCornerPositions = function(corners){
 		corners = defaultFor(corners,cornerLayer.selectAll("path"));
-		
+		function coorstr(p) { 
+			return p.x + " " + p.y;
+		}
 		corners.attr("d", function(edge) {
 			if( edge.isReverse(edge.prev()) )
 			{
 				// Need full circle: treat as special case.
-				return "M " + edge.start().pos.x + " " + -edge.start().pos.y
+				return "M " + coorstr(mapToScreenCoor(edge.start().pos))
 					+ " m " + -cornerradius + " 0"
 					+ " a " + cornerradius + " " + cornerradius + " 0 1 0 "
 							+ 2*cornerradius + " 0 "
@@ -383,16 +399,15 @@ CMap.View = function(map,targetsvg) {
 					+ " Z";
 			} else
 			{
-				var tangent1 = CMap.getTangent(edge)
+				var tangent1 = mapToScreenCoor(CMap.getTangent(edge))
 							   .normalize().mult(cornerradius),
-					tangent2 = CMap.getTangent(edge.prev().reverse())
+					tangent2 = mapToScreenCoor(CMap.getTangent(edge.prev().reverse()))
 							   .normalize().mult(cornerradius);
-				return "M " + edge.start().pos.x + " " + -edge.start().pos.y
-					+ " l " + tangent1.x + " " + -tangent1.y
+				return "M " + coorstr(mapToScreenCoor(edge.start().pos))
+					+ " l " + coorstr(tangent1)
 					+ " a " + cornerradius + " " + cornerradius + " 0 "
-							+ ( tangent1.cross(tangent2) >= 0 ? "0" : "1" ) 
-							+ " 0 "	+ (tangent2.x - tangent1.x) + " "	
-							+ -(tangent2.y - tangent1.y)				 
+							+ ( tangent1.cross(tangent2) <= 0 ? "0" : "1" ) 
+							+ " 0 "	+ coorstr(tangent2.minus(tangent1)) 
 					+ " Z";
 			}
 		});
@@ -438,6 +453,41 @@ CMap.View = function(map,targetsvg) {
 		});
 		nodeSelection.splice(0,nodeSelection.length);
 		view.updateLayers();
+	}
+	view.addToSelection = function(obj){
+		if( obj instanceof CMap.Node && !obj.attr.selected )
+		{
+			obj.attr.selected = true;
+			nodeSelection.push(obj);
+		}
+		if( obj instanceof CMap.Edge && !obj.attr.selected )
+		{
+			obj.attr.selected = true;
+			edgeSelection.push(obj);
+		}
+		if( obj instanceof CMap.Face && !obj.attr.selected )
+		{
+			obj.attr.selected = true;
+			faceSelection.push(obj);
+		}
+		if( obj instanceof CMap.OrientedEdge )
+		{
+			if( obj.reversed )
+			{
+				if( !obj.edge.attr.rightcornerselected )
+				{
+					obj.edge.attr.rightcornerselected = true;
+					cornerSelection.push(obj);
+				}
+			} else
+			{
+				if( !obj.edge.attr.leftcornerselected )
+				{
+					obj.edge.attr.leftcornerselected = true;
+					cornerSelection.push(obj);
+				}
+			}
+		}
 	}
 	view.addFaceSelection = function(fun){
 		planarmap.faces().forEach(function(f){

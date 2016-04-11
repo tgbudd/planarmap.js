@@ -494,6 +494,11 @@ CMap.PlanarMap = function (){
 		}
 		onChange[type].push(callback);
 	}
+	planarmap.forEach = function(fun){
+		nodes.forEach(fun);
+		edges.forEach(fun);
+		faces.forEach(fun);
+	}
 	planarmap.singleEdgeMap = function(){
 		nodes.clear();
 		edges.clear();
@@ -659,6 +664,7 @@ CMap.PlanarMap = function (){
 				.concat(rightface.edges.slice(0,rightindex)));
 			if( rightface.layout.outer ) {
 				leftface.layout.outer = true;
+				outerface = leftface;
 			}
 			planarmap.faces().remove(rightface);
 			planarmap.edges().remove(edge);

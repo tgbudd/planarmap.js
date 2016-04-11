@@ -135,7 +135,8 @@ var crowbar = (function() {
   }
 
   function prepareBlob(source){
-    return new Blob(source.source, { "type" : "text\/xml" });
+	var src = source.source[0].replace(/&lt;!\[CDATA/g,'<![CDATA').replace(/\]\]&gt;/g,']]>');
+    return new Blob([src], { "type" : "text\/xml" });
   }
   function download(source) {
     var filename = "untitled";

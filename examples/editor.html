@@ -8,7 +8,7 @@ html, body {
 	margin: 0;
 	padding: 0;
 	font-family: "Helvetica Neue", Helvetica, sans-serif;
-	font-size:0.3;
+	font-size:6;
 }
 #pmap {
 	width: 100%;
@@ -18,21 +18,21 @@ html, body {
 }
 svg path.edge {
 	stroke: #404040;
-	stroke-width: 0.05;
+	stroke-width: 1;
 	fill: none;
 }
 svg path.edge.selected {
-	stroke: #804040;
-	stroke-width: 0.07;
+	stroke: #902020;
+	stroke-width: 1.4;
 	fill: none;
 }
 svg path.face {
 	stroke: none;
-	fill: #ccccff;
+	fill: #ffffdd;
 }
 svg path.face.selected {
 	stroke: none;
-	fill: #ff7777;
+	fill: #ff4444;
 }
 svg .cornerLayer path {
 	stroke: none;
@@ -45,10 +45,12 @@ svg text.label {
 	//font-size: 0.3;
 }
 svg circle.node {
-	fill: #4040d0;
+	fill: #404040;
+	stroke: none;
 }
 svg circle.node.selected {
-	fill: #a040d0;
+	stroke: red;
+	stroke-width: 0.6;
 }
 div#title {
 	z-index:101; 
@@ -124,12 +126,51 @@ div#title {
 	margin-left: 10px;
 	margin-right: 10px;
 }
+.editorhints {
+	z-index:101;
+	pointer-events: none;
+	position:absolute;
+	top:80px;
+	left:15px;
+	font-size: 14px;
+}
+dl.controls dt {
+	float: left;
+	clear: left;
+	width: 120px;
+	text-align: right;
+	font-family: courier;
+}
+dl.controls dt:after {
+	content: ":";
+}
+dl.controls dd {
+	color: black;
+	margin: 0 40px 0 130px;
+	padding: 0 0 0.4em 0;
+	font-weight: bold;
+	font-family: sans-serif;
+	width:260px;
+}
+
+
+
 </style>
 </head>
 <body>
 	
 <div id="title">
 	<h1>Editor</h1>
+</div>
+<div class="editorhints">
+	<dl class="controls">
+		<dt>Mousewheel</dt><dd>Zoom</dd>
+		<dt>Click</dt><dd>Select</dd>
+		<dt>Shift-Click</dt><dd>Select more</dd>
+		<dt>E</dt><dd>Create edge</dd>
+		<dt>S</dt><dd>Split vertex or edge</dd>
+		<dt>Delete</dt><dd>Delete edge</dd>
+	</dl>
 </div>
 
 <div class="panelcontainer"></div>
@@ -144,7 +185,7 @@ div#title {
 <script src="../src/view.js"></script>
 <script src="../src/algorithms.js"></script>
 <script src="../src/controlpanel.js"></script>
-<script src="planarmap.jsonp"></script>
+<script src="./data/planarmapexamples.js"></script>
 <script src="../thirdparty/crowbar/svg-crowbar.js"></script>
 <script>
 
@@ -152,12 +193,14 @@ var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
 	.attr("height","100%")
-	.attr("viewBox","-8 -5 16 10")
+	.attr("viewBox","-160 -100 320 200")
 	.attr("preserveAspectRatio", "xMidYMid meet")	
 	
-var planarmap = CMap.PlanarMap().fromJSON(mapdata);
+var planarmap = CMap.PlanarMap();
 var layoutupdater = CMap.LayoutUpdater()
 	.registerAll(planarmap);
+
+planarmap.singleEdgeMap();	
 	
 var view = CMap.View(planarmap,svg).zoom();
 view.nodeText(function(node){
@@ -180,29 +223,79 @@ var filepanel = control.addPanel("file","File",false,function(){});
 var fileload = filepanel.addEmpty();
 fileload.append("input").attr("type","file")
 	.attr("id","fileinput")
-	.attr("accept",".json")
+	.attr("accept",".json,.svg")
 	.style("display","none")
 	.on("change",function(){
 		var file = this.files[0];
-		if( true)//file.type.match(/text.*/) )
-		{
-			var reader = new FileReader();
-			reader.onload = function(e) {
-				planarmap.fromJSON(JSON.parse(reader.result));
-				view.updateLayers();
-				view.updatePositions();
-				force.resume();
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var json;
+			try{
+				// first try parsing as pure JSON
+				json = JSON.parse(reader.result);
+			}catch(e){
+				// otherwise try to find CDATA-field in file and parse that
+				var cdata = reader.result.split('<jsondata><![CDATA[');
+				if( cdata.length < 2 )
+					return;
+				cdata = cdata[1].split(']]>')[0];
+				try{
+					json = JSON.parse(cdata);
+				}catch(e2){
+					return;	
+				}
 			}
-			reader.readAsText(file);
+			planarmap.fromJSON(json);
+			view.updateLayers();
+			view.updatePositions();
+			force.resume();
 		}
+		reader.readAsText(file);
+
 		this.value = "";
 	});
+
+	
 fileload.append("input").attr("type","button")
-	.attr("value","Load JSON...")
+	.attr("value","Load JSON or SVG...")
 	.on("click",function(){
 		document.getElementById("fileinput").click();
-		//d3.select("#fileinput").on("click")();
 	});
+	
+	
+(function(){
+	var exampleselect = filepanel.addEmpty().append("select")
+		.on("change",function(){
+			if( this.value != "" )
+			{
+				planarmap.fromJSON(exampledata[this.value]);
+				view.updateLayers();
+				view.updatePositions();
+			}
+			this.value="";
+		});
+	exampleselect
+		.append("option")
+		.attr("class","selectheader")
+		.text("---- Load example ----")
+		.attr("value","");
+		
+	var examples = [
+		["Triangulation","triangulation"],
+		["Quadrangulation","quadrangulation"],
+		["Plane tree","tree"],
+		["Square grid","squaregrid"],
+		["Goldner-Harary","goldner-harary"],
+		["Dodecahedron","dodecahedron"]
+	];
+	
+	exampleselect.selectAll("option.selectoption")
+			.data(examples)
+			.enter().append("option")
+			.attr("class","selectoption")
+			.attr("value",function(d){ return d[1];})
+			.text(function(d){return d[0];});		
+})();
 	
 function downloadfile(filename, text) {
     var pom = document.createElement('a');
@@ -236,14 +329,14 @@ var svgdownload = filepanel.addEmpty()
 			.html(content);
 		div.select(".backgroundLayer").remove();
 		div.select(".helpLineLayer").remove();
+		div.select(".cornerLayer").remove();
 		div.select("svg").attr("id","svgcopy")
-			.append("jsondata").text("<[!CDATA[" + 
+			.append("jsondata").text("<![CDATA[" + 
 				JSON.stringify(planarmap) + "]]>");
 		
 		crowbar.downloadById("svgcopy",
-			["stroke","stroke-width","fill"],
-			"font-family: helvetica, sans-serif;font-size:0.3;"
-		);
+			["stroke","stroke-width","fill"] );//,
+			""//"font-family: helvetica, sans-serif;font-size:0.3;");
 		
 		div.remove();
 		/*var sources = crowbar.findAndParseSVGs();
@@ -296,102 +389,193 @@ selectpanel.addEmpty()
 var dropdown = selectpanel.addEmpty()
 	.append("select")
 	.on("focus",function(){
+		classes = getAllClasses(planarmap);
 		d3.select(this).selectAll("option.selectoption")
-			.data(classes)
+			.data(classes,function(d){ return d;})
 			.enter().append("option")
 			.attr("class","selectoption")
-			.text("hallo")
 			.attr("value",function(d){ return d;})
 			.text(function(d){return d;});
 	})
-	.on("change",function(){
-		view.clearSelection();
-		
-		console.log(this.value !== "");
+	.on("change",function(event){
+		var selectClass = this.value;
+		planarmap.forEach(function(obj){
+			if( obj.class[selectClass] )
+			{
+				view.addToSelection(obj);
+			}
+		});
+		view.updateLayers();
+		this.value = "";
 	})
 	.append("option")
 	.attr("class","selectheader")
-	.text("Select all of class")
+	.text("--- Select all of class ---")
 	.attr("value","");
-
+	
+var setclassDropDown = selectpanel.addEmpty();
+setclassDropDown
+	.append("input")
+	.attr("list","selectclasses")
+	.attr("value","Set class ...")
+	.on("change",function(event){
+		var classname = this.value;
+		view.getSelection().faces.forEach(function(f){
+			f.class[classname] = true;
+		});
+		view.getSelection().edges.forEach(function(e){
+			e.class[classname] = true;
+		});
+		view.getSelection().nodes.forEach(function(n){
+			n.class[classname] = true;
+		});		
+		var selectClass = this.value;
+		planarmap.forEach(function(obj){
+			if( obj.class[selectClass] )
+			{
+				view.addToSelection(obj);
+			}
+		});
+		view.updateLayers();
+		this.value = "Set class ...";
+	})
+	.on("focus",function(){
+		this.value = "";
+		classes = getAllClasses(planarmap);
+		var allowedClasses = classes.filter(function(x){
+			return ["face","edge","node"].indexOf(x) < 0;
+		});
+		d3.select("#selectclasses").selectAll("option")
+			.data(allowedClasses,function(d){ return d;})
+			.enter().append("option")
+			.attr("value",function(d){ return d;})
+			.text(function(d){return d;});
+	})
+	.append("datalist")
+	.attr("id","selectclasses");
+	
+selectpanel.addEmpty()
+	.append("input").attr("type","button")
+	.attr("value","Clear classes selection")
+	.on("click",function(){
+		view.getSelection().faces.forEach(function(f){
+			for( var key in f.class ) {
+				if(f.class.hasOwnProperty(key) && key != "face" )
+				{
+					f.class[key] = false;
+				}
+			}
+		});
+		view.getSelection().edges.forEach(function(e){
+			for( var key in e.class ) {
+				if(e.class.hasOwnProperty(key) && key != "edge" )
+				{
+					e.class[key] = false;
+				}
+			}
+		});
+		view.getSelection().nodes.forEach(function(n){
+			for( var key in n.class ) {
+				if(n.class.hasOwnProperty(key) && key != "node" )
+				{
+					n.class[key] = false;
+				}
+			}
+		});				
+	}); 
 
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 46 ) // Delete
 	{
-		var selection = view.getSelection();
-		if( selection.faces.length == 0 &&
-			selection.nodes.length == 0 &&
-			selection.corners.length == 0 &&
-			selection.edges.length == 1 )
-		{
-			var edge = selection.edges[0];
-			if( !(edge.start.edges.length > 1 && edge.end.edges.length > 1
-				&& edge.left == edge.right) && planarmap.numEdges() > 1 )
-			{
-
-				view.clearSelection();
-				planarmap.removeEdge(edge);
-				view.updateLayers();
-				view.updatePositions();
-			}
-		}
+		deleteEdge();
 	} else if ( d3.event.keyCode == 69 ) // E
 	{
-		var selection = view.getSelection();
-		if( selection.faces.length == 0 &&
-			selection.nodes.length == 0 &&
-			selection.edges.length == 0 )	
-		{
-			if( selection.corners.length == 1 )
-			{
-				var edge = selection.corners[0];
-				view.clearSelection();
-				planarmap.insertEdgeNextTo(edge);
-
-			} else if( selection.corners.length == 2 
-				&& selection.corners[0].left() ==
-				   selection.corners[1].left() )
-			{
-				var edge1 = selection.corners[0],
-					edge2 = selection.corners[1];
-				view.clearSelection();
-				planarmap.insertDiagonal(edge1.left(),[edge1,edge2]);
-
-			}
-			view.updateLayers();
-			view.updatePositions();
-		}	
+		createEdge();
 	} else if ( d3.event.keyCode == 83 ) // S
 	{
-		var selection = view.getSelection();
-		if( selection.faces.length == 0 &&
-			selection.nodes.length == 0 &&
-			selection.corners.length == 0 &&
-			selection.edges.length == 1 )	
-		{
-			var splitedge = selection.edges[0].getOriented();
-			view.clearSelection();
-			planarmap.splitEdge(splitedge);
-			view.updateLayers();
-			view.updatePositions();
-		} else if( selection.faces.length == 0 &&
-			selection.nodes.length == 0 &&
-			selection.corners.length == 2 &&
-			selection.edges.length == 0 )	
-		{
-			if( selection.corners[0].start() ==
-				selection.corners[1].start() )
-			{
-				var corner1 = selection.corners[0],
-					corner2 = selection.corners[1];
-				view.clearSelection();
-				planarmap.splitVertex([corner1,corner2]);
-				view.updateLayers();
-				view.updatePositions();
-			}
-		}	
+		splitVertexOrEdge();
 	}
 });
+
+function createEdge()
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.edges.length == 0 )	
+	{
+		if( selection.corners.length == 1 )
+		{
+			var edge = selection.corners[0];
+			view.clearSelection();
+			planarmap.insertEdgeNextTo(edge);
+
+		} else if( selection.corners.length == 2 
+			&& selection.corners[0].left() ==
+			   selection.corners[1].left() )
+		{
+			var edge1 = selection.corners[0],
+				edge2 = selection.corners[1];
+			view.clearSelection();
+			planarmap.insertDiagonal(edge1.left(),[edge1,edge2]);
+
+		}
+		view.updateLayers();
+		view.updatePositions();
+	}	
+}
+
+function splitVertexOrEdge()
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 0 &&
+		selection.edges.length == 1 )	
+	{
+		var splitedge = selection.edges[0].getOriented();
+		view.clearSelection();
+		planarmap.splitEdge(splitedge);
+		view.updateLayers();
+		view.updatePositions();
+	} else if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 2 &&
+		selection.edges.length == 0 )	
+	{
+		if( selection.corners[0].start() ==
+			selection.corners[1].start() )
+		{
+			var corner1 = selection.corners[0],
+				corner2 = selection.corners[1];
+			view.clearSelection();
+			planarmap.splitVertex([corner1,corner2]);
+			view.updateLayers();
+			view.updatePositions();
+		}
+	}	
+}
+
+function deleteEdge()
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 0 &&
+		selection.edges.length == 1 )
+	{
+		var edge = selection.edges[0];
+		if( !(edge.start.edges.length > 1 && edge.end.edges.length > 1
+			&& edge.left == edge.right) && planarmap.numEdges() > 1 )
+		{
+
+			view.clearSelection();
+			planarmap.removeEdge(edge);
+			view.updateLayers();
+			view.updatePositions();
+		}
+	}
+}
 
 </script>
 </body>
