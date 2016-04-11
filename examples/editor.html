@@ -1,6 +1,8 @@
 <html>
 <head>
 <link rel="stylesheet" type="text/css" href="../thirdparty/css-toggle-switch/toggle-switch.css">
+<link href="../thirdparty/mcColorPicker/mcColorPicker.css" rel="stylesheet" type="text/css" />
+<script src="../thirdparty/mcColorPicker/mcColorPicker.js" type="text/javascript"></script>
 <style>
 html, body {
 	width: 100%;
@@ -22,8 +24,8 @@ svg path.edge {
 	fill: none;
 }
 svg path.edge.selected {
-	stroke: #902020;
-	stroke-width: 1.4;
+	stroke: #902020 !important;
+	stroke-width: 1.4 !important;
 	fill: none;
 }
 svg path.face {
@@ -31,8 +33,9 @@ svg path.face {
 	fill: #ffffdd;
 }
 svg path.face.selected {
-	stroke: none;
-	fill: #ff4444;
+	stroke: red !important;
+	stroke-width: 2 !important;
+	//fill: #ff4444;
 }
 svg .cornerLayer path {
 	stroke: none;
@@ -49,8 +52,8 @@ svg circle.node {
 	stroke: none;
 }
 svg circle.node.selected {
-	stroke: red;
-	stroke-width: 0.6;
+	stroke: red !important;
+	stroke-width: 0.6 !important;
 }
 div#title {
 	z-index:101; 
@@ -153,9 +156,19 @@ dl.controls dd {
 	width:260px;
 }
 
-
+.colorpicklabel {
+	display: inline-block;
+	width: 70px;
+}
+div#colorpicker {
+	left: -154px;
+}
+input.color {
+	width: 70px;
+}
 
 </style>
+
 </head>
 <body>
 	
@@ -187,6 +200,7 @@ dl.controls dd {
 <script src="../src/controlpanel.js"></script>
 <script src="./data/planarmapexamples.js"></script>
 <script src="../thirdparty/crowbar/svg-crowbar.js"></script>
+
 <script>
 
 var svg = d3.select("#pmap").append("svg")
@@ -235,7 +249,7 @@ fileload.append("input").attr("type","file")
 				json = JSON.parse(reader.result);
 			}catch(e){
 				// otherwise try to find CDATA-field in file and parse that
-				var cdata = reader.result.split('<jsondata><![CDATA[');
+				var cdata = reader.result.split('<jsondata><!['+'CDATA[');
 				if( cdata.length < 2 )
 					return;
 				cdata = cdata[1].split(']]>')[0];
@@ -323,6 +337,7 @@ var svgdownload = filepanel.addEmpty()
 	.append("input").attr("type","button")
 	.attr("value","Download SVG")
 	.on("click",function(){
+		view.clearSelection();
 		var content = d3.select("#pmap").html();
 		var div = d3.select("body").append("div")
 			.style("display","none")
@@ -330,20 +345,25 @@ var svgdownload = filepanel.addEmpty()
 		div.select(".backgroundLayer").remove();
 		div.select(".helpLineLayer").remove();
 		div.select(".cornerLayer").remove();
+		
+		// Extract bounding box from original svg.
+		// For some reason one cannot do so for an SVG with display:none.
+		var rect = d3.select("#pmap .edgelayer").node().getBBox();
+		var margin = 5;
+		rect.x -= margin;
+		rect.y -= margin;
+		rect.width += 2*margin;
+		rect.height += 2*margin;
+		
 		div.select("svg").attr("id","svgcopy")
+			.attr("viewBox",rect.x + " " + rect.y + " " + rect.width + " " + rect.height)
 			.append("jsondata").text("<![CDATA[" + 
 				JSON.stringify(planarmap) + "]]>");
 		
 		crowbar.downloadById("svgcopy",
-			["stroke","stroke-width","fill"] );//,
-			""//"font-family: helvetica, sans-serif;font-size:0.3;");
-		
+			["stroke","stroke-width","fill"] );	
 		div.remove();
-		/*var sources = crowbar.findAndParseSVGs();
-		if(sources.length > 0){
-			//Just download the first
-			crowbar.download(sources[0]);
-		}*/
+
 	});
 filepanel.addEmpty()
 	.append("input").attr("type","button")
@@ -456,7 +476,7 @@ setclassDropDown
 	
 selectpanel.addEmpty()
 	.append("input").attr("type","button")
-	.attr("value","Clear classes selection")
+	.attr("value","Clear classes of selection")
 	.on("click",function(){
 		view.getSelection().faces.forEach(function(f){
 			for( var key in f.class ) {
@@ -483,7 +503,85 @@ selectpanel.addEmpty()
 			}
 		});				
 	}); 
-
+	
+var fillcolorpicker=selectpanel.addEmpty();
+fillcolorpicker
+	.append("label")
+	.attr("class","colorpicklabel")
+	.attr("for","fillcolorpicker")
+	.text("Fill:");
+fillcolorpicker
+	.append("input").attr("type","text")
+	.attr("id","fillcolorpicker")
+	.attr("class","color");
+var strokecolorpicker=selectpanel.addEmpty();
+strokecolorpicker
+	.append("label")
+	.attr("class","colorpicklabel")
+	.text("Stroke:")
+	.attr("for","strokecolorpicker");
+strokecolorpicker	
+	.append("input").attr("type","text")
+	.attr("id","strokecolorpicker")
+	.attr("class","color");
+	
+selectpanel.addEmpty()
+	.append("input").attr("type","button")
+	.attr("value","Clear styles of selection")
+	.on("click",function(){
+		var clearstyle = function(obj){
+			if( obj.attr.style )
+			{
+				for (var key in obj.attr.style){
+					if (obj.attr.style.hasOwnProperty(key)){
+						obj.attr.style[key] = null;
+						//delete obj.attr.style[key];
+					}
+				}			
+			}
+		};
+		view.getSelection().faces.forEach(clearstyle);
+		view.getSelection().edges.forEach(clearstyle);
+		view.getSelection().nodes.forEach(clearstyle);
+		view.updateLayers();
+	}); 	
+	
+function OnColorChanged(selectedColor, colorPickerIndex) {
+	view.getSelection().faces.forEach(function(f){
+		if( !f.attr.style )
+		{
+			f.attr.style = {};
+		}
+		if( colorPickerIndex == 0 ) {
+			f.attr.style.fill = selectedColor;
+		} else if( colorPickerIndex == 1 ) {
+			f.attr.style.stroke = selectedColor;
+		}		
+	});
+	view.getSelection().nodes.forEach(function(n){
+		if( !n.attr.style )
+		{
+			n.attr.style = {};
+		}
+		if( colorPickerIndex == 0 ) {
+			n.attr.style.fill = selectedColor;
+		} else if( colorPickerIndex == 1 ) {
+			n.attr.style.stroke = selectedColor;
+		}
+	});
+	view.getSelection().edges.forEach(function(e){
+		if( !e.attr.style )
+		{
+			e.attr.style = {};
+		}
+		if( colorPickerIndex == 0 ) {
+		} else if( colorPickerIndex == 1 ) {
+			e.attr.style.stroke = selectedColor;
+		}
+	});
+	view.updateLayers();		
+}
+	
 d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 46 ) // Delete
 	{

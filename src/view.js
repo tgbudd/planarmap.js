@@ -224,8 +224,16 @@ CMap.View = function(map,targetsvg) {
 			newfaces.on("click",onFaceClick);
 		}
 		facePaths.each(function(f){
-			d3.select(this).classed(f.class);
-			d3.select(this).classed("selected", !!f.attr.selected );
+			var thiselement = d3.select(this)
+				.classed(f.class)
+				.classed("selected", !!f.attr.selected );
+			if( f.attr.style )
+			{
+				for(var stylename in f.attr.style)
+				{
+					thiselement.style(stylename,f.attr.style[stylename]);
+				} 
+			}
 		});
 				
 		view.updateFacePositions(newfaces);		
@@ -246,8 +254,16 @@ CMap.View = function(map,targetsvg) {
 			newedges.on("click",onEdgeClick);
 		}
 		edgePaths.each(function(e){
-			d3.select(this).classed(e.class);
-			d3.select(this).classed("selected", !!e.attr.selected );
+			var thiselement = d3.select(this)
+				.classed(e.class)
+				.classed("selected", !!e.attr.selected );
+			if( e.attr.style )
+			{
+				for(var stylename in e.attr.style)
+				{
+					thiselement.style(stylename,e.attr.style[stylename]);
+				} 
+			}
 		});
 		
 		view.updateEdgePositions(newedges);
@@ -277,8 +293,16 @@ CMap.View = function(map,targetsvg) {
 		newNodeGroups.call(dragbehaviour);
 
 		nodeGroups.select("circle").each(function(n){ 
-			d3.select(this).classed(n.class);
-			d3.select(this).classed("selected", !!n.attr.selected );
+			var thiselement = d3.select(this)
+				.classed(n.class)
+				.classed("selected", !!n.attr.selected );
+			if( n.attr.style )
+			{
+				for(var stylename in n.attr.style)
+				{
+					thiselement.style(stylename,n.attr.style[stylename]);
+				} 
+			}
 		});
 		
 		newNodeGroups.append("text")
