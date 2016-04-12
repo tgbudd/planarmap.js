@@ -159,6 +159,35 @@ CMap.View = function(map,targetsvg) {
 		svg.selectAll("*").remove();
 		
 		globalGroup = svg.append("g").attr("id","zoomgroup");
+		
+		var defs = svg.append("defs")
+
+		defs.append("marker")
+				.attr({
+					"id":"arrowend",
+					"viewBox":"-2 -5 10 10",
+					"refX":13,
+					"refY":0,
+					"markerWidth":4,
+					"markerHeight":4,
+					"orient":"auto"
+				})
+				.append("path")
+					.attr("d", "M-2,-5L10,0L-2,5L0,0")
+					.attr("class","arrowHead");
+		defs.append("marker")
+				.attr({
+					"id":"arrowstart",
+					"viewBox":"-8 -5 10 10",
+					"refX":-13,
+					"refY":0,
+					"markerWidth":4,
+					"markerHeight":4,
+					"orient":"auto"
+				})
+				.append("path")
+					.attr("d", "M2,-5L-10,0L2,5L0,0")
+					.attr("class","arrowHead");
 
 		backgroundLayer = globalGroup.append("g").attr("class","backgroundLayer");
 		backgroundRect = backgroundLayer.append("rect")
@@ -265,6 +294,23 @@ CMap.View = function(map,targetsvg) {
 				{
 					thiselement.style(stylename,e.attr.style[stylename]);
 				} 
+			}
+			if( e.attr.marker )
+			{
+				if( e.attr.marker.end && e.attr.marker.end != "" )
+				{
+					thiselement.attr("marker-end","url(#" + e.attr.marker.end + "end)");
+				} else
+				{
+					thiselement.attr("marker-end","null");
+				}
+				if( e.attr.marker.start && e.attr.marker.start != ""  )
+				{
+					thiselement.attr("marker-start","url(#" + e.attr.marker.start + "start)");
+				} else
+				{
+					thiselement.attr("marker-start","null");
+				}
 			}
 		});
 		

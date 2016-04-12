@@ -18,6 +18,9 @@ html, body {
 	top: 0;
 	left: 0;
 }
+#arrowend, #arrowstart {
+	fill: #404040;
+}
 svg path.edge {
 	stroke: #404040;
 	stroke-width: 1;
@@ -181,15 +184,18 @@ input.color {
 		<dt>Mousewheel</dt><dd>Zoom</dd>
 		<dt>Click</dt><dd>Select</dd>
 		<dt>Shift-Click</dt><dd>Select more</dd>
+		<dt>Delete</dt><dd>Delete edge</dd>
 		<dt>E</dt><dd>Create edge
-			<br /><img src="./images/newedge1.svg" width=100px>
-			<br /><img src="./images/newedge2.svg" width=110px>
+			<br /><img src="./images/newedge1.png" width=100px>
+			<br /><img src="./images/newedge2.png" width=110px>
 		</dd>
 		<dt>S</dt><dd>Split vertex or edge
-			<br /><img src="./images/splitedge.svg" width=120px>
-			<br /><img src="./images/splitvertex.svg" width=110px>
+			<br /><img src="./images/splitedge.png" width=120px>
+			<br /><img src="./images/splitvertex.png" width=110px>
 		</dd>
-		<dt>Delete</dt><dd>Delete edge</dd>
+		<dt>M</dt><dd>Toggle marker
+			<br /><img src="./images/addmarker.png" width=110px>
+		</dd>
 	</dl>
 </div>
 
@@ -599,6 +605,9 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 83 ) // S
 	{
 		splitVertexOrEdge();
+	} else if ( d3.event.keyCode == 77 ) // M
+	{
+		toggleMarker();
 	}
 });
 
@@ -679,6 +688,43 @@ function deleteEdge()
 			view.updateLayers();
 			view.updatePositions();
 		}
+	}
+}
+
+function toggleMarker()
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length > 0 &&
+		selection.edges.length == 0 )
+	{
+		selection.corners.forEach(function(oredge){
+			if( !oredge.edge.attr.marker )
+			{
+				oredge.edge.attr.marker = {};
+			}
+			if( !oredge.reversed )
+			{
+				if( !oredge.edge.attr.marker.start || oredge.edge.attr.marker.start != "arrow" )
+				{
+					oredge.edge.attr.marker.start = "arrow";
+				} else
+				{
+					oredge.edge.attr.marker.start = "";
+				}
+			} else
+			{
+				if( !oredge.edge.attr.marker.end || oredge.edge.attr.marker.end != "arrow" )
+				{
+					oredge.edge.attr.marker.end = "arrow";
+				} else
+				{
+					oredge.edge.attr.marker.end = "";
+				}
+			}		
+		});
+		view.updateLayers();
 	}
 }
 
