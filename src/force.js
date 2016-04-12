@@ -12,13 +12,14 @@ CMap.force = function (map){
 	var springLength = 1.0;
 	var springCoupling = 2.0;
 	var controlParam = 0.2;
+	var initialStepsize = 0.004;
 	var dragforce = {drag: false, coupling: 40};
 	var stretchforce = {stretch: false, coupling: 0.8, power: 2, 
 		anglescale: Math.PI/6 };
 	var running = false;
 	var numrunning = 0;
 	var enabled = true;
-	var centerPull = {pull: false, center: new Vec2(0,0), coupling: 3};
+	var centerPull = {pull: true, center: new Vec2(0,0), coupling: 3};
 	var minForceSq = 0.05;
 	
 	force.enabled = function(x) {
@@ -34,7 +35,12 @@ CMap.force = function (map){
 		if (!arguments.length) return repulsionPower;
 		repulsionPower = x;
 		return force;
-	}; 	
+	};
+	force.initialStepsize = function(x) {
+		if (!arguments.length) return initialStepsize;
+		initialStepsize = x;
+		return force;
+	}; 	 	
 	force.springLength = function(x) {
 		if (!arguments.length) return springLength;
 		springLength = x;
@@ -55,6 +61,16 @@ CMap.force = function (map){
 		centerPull = x;
 		return force;	
 	};
+	force.centerPullCoupling = function(x) {
+		if (!arguments.length) return centerPull.coupling;
+		centerPull.coupling = x;
+		return force;	
+	};
+	force.lowerThreshold = function(x) {
+		if (!arguments.length) return minForceSq;
+		minForceSq = x;
+		return force;	
+	};	
 	force.stretchForce = function(x) {
 		if (!arguments.length) return stretchforce;
 		if( typeof x === 'boolean' )
@@ -278,7 +294,7 @@ CMap.force = function (map){
 		}
 		
     	
-    	var stepsize = 0.004;
+    	var stepsize = initialStepsize;
     	
     	// Accumulate force and calculate energy
     	var energy = force.energy(true);
@@ -287,7 +303,7 @@ CMap.force = function (map){
     	var numUnfixed = 0;
 		CMap.forEachVertex(planarmap,function(n){
 			n.oldpos = n.pos.copy();
-			if( !n.layout || !n.layout.fixed )
+			if( !n.layout || !n.layout.fixed || (dragforce.drag && dragforce.node == n) )
 			{
 				gradSq += n.force.normSq();
 				maxForce=Math.max(maxForce,n.force.normSq());
@@ -312,7 +328,7 @@ CMap.force = function (map){
 			while( maxsteps > 0 && !done ) {
 				var countmax = 0;
 				CMap.forEachVertex(planarmap,function(n){
-					if( !n.layout || !n.layout.fixed )
+					if( !n.layout || !n.layout.fixed || (dragforce.drag && dragforce.node == n) )
 					{
 						var displ = n.force.copy().mult(stepsize);
 						if( displ.normSq() > maxDisplacement*maxDisplacement )

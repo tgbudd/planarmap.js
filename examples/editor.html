@@ -196,6 +196,8 @@ input.color {
 		<dt>M</dt><dd>Toggle marker
 			<br /><img src="./images/addmarker.png" width=110px>
 		</dd>
+		<dt>F/R</dt><dd>Fix/release node position
+		</dd>
 	</dl>
 </div>
 
@@ -262,7 +264,7 @@ fileload.append("input").attr("type","file")
 				json = JSON.parse(reader.result);
 			}catch(e){
 				// otherwise try to find CDATA-field in file and parse that
-				var cdata = reader.result.split('<jsondata><!['+'CDATA[');
+				var cdata = reader.result.split('<jsondata><'+'![CDATA[');
 				if( cdata.length < 2 )
 					return;
 				cdata = cdata[1].split(']]>')[0];
@@ -393,7 +395,16 @@ control.addPanel("forcelayout","Force layout",
 	.addSlider("Spring coupling","springcoupling",
 		force.springCoupling, 0.2, 10, 0.2)
 	.addSlider("Spring length","springlength",
-		force.springLength, 0.2, 2.5, 0.1);	
+		force.springLength, 0.2, 2.5, 0.1)
+	.addSlider("Repulsion power","repulsionpower",
+		force.repulsionPower, 0.3, 2, 0.1)
+	.addSlider("Centering force","centerpullcoupling",
+		force.centerPullCoupling, 0., 5, 0.1)
+	.addSlider("Initial stepsize","initialstepsize",
+		force.initialStepsize, 0.0005, 0.03, 0.0005)
+	.addSlider("Lower threshold","lowerthreshold",
+		force.lowerThreshold, 0.0, 0.2, 0.005)	
+		;	
 
 function getAllClasses(map) {
 	var classes = {};
@@ -608,6 +619,12 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 77 ) // M
 	{
 		toggleMarker();
+	} else if ( d3.event.keyCode == 70 ) // F
+	{
+		fixVertices(true);
+	} else if ( d3.event.keyCode == 82 ) // R
+	{
+		fixVertices(false);
 	}
 });
 
@@ -723,6 +740,25 @@ function toggleMarker()
 					oredge.edge.attr.marker.end = "";
 				}
 			}		
+		});
+		view.updateLayers();
+	}
+}
+
+function fixVertices(fix)
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length > 0 &&
+		selection.corners.length == 0 &&
+		selection.edges.length == 0 )
+	{
+		selection.nodes.forEach(function(node){
+			if( !node.layout )
+			{
+				node.layout = {};
+			}
+			node.layout.fixed = fix;
 		});
 		view.updateLayers();
 	}

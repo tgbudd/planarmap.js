@@ -92,6 +92,10 @@ CMap.View = function(map,targetsvg) {
 				faceSelection.push(face);
 			}
 		}
+		if( !iscorner && face.layout.outer && !d3.event.shiftKey)
+		{
+			view.clearSelection();
+		}
 		view.updateLayers();
 	}
 	function onBackgroundClick() {
