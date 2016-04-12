@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="100%"
+   height="100%"
+   viewBox="-37.76548 -15.248637 89.076714 29.587162"
+   id="svgcopy"
+   style="fill:#000000;stroke:none">
+  <metadata
+     id="metadata54">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs52">
+    <marker
+       refX="0"
+       refY="0"
+       orient="auto"
+       id="Arrow1Mend"
+       style="overflow:visible">
+      <path
+         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         id="path3897"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt" />
+    </marker>
+  </defs>
+  <path
+     d="m -11.26372,-10.127334 c 3.2042864,5.6075009 1.5220363,11.3752159 -4.165572,14.4192879 -2.403216,-4.48599997 -4.005358,-8.972002 -4.005358,-8.972002 z"
+     id="path3112"
+     style="fill:#ff0000;stroke:none" />
+  <path
+     d="M 31.543166,-3.8502838 46.229421,-14.784057"
+     id="path8"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <path
+     d="M 31.543166,-3.8502838 16.171333,-6.0395311"
+     id="path10"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <path
+     d="M 31.543166,-3.8502838 39.143195,13.873945"
+     id="path12"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <path
+     d="M 31.543166,-3.8502838 49.452423,1.1089849"
+     id="path14"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <g
+     transform="matrix(0.88992696,-0.26715081,0.26715081,0.88992696,31.543166,-3.8502838)"
+     id="g18"
+     style="fill:#000000;stroke:none">
+    <circle
+       cx="0"
+       cy="0"
+       r="2"
+       id="circle20"
+       style="fill:#404040;stroke:none" />
+    <text
+       dx="2.8"
+       dy="-2"
+       id="text22"
+       style="font-size:6px;fill:#000000;stroke:none" />
+  </g>
+  <g
+     transform="matrix(0.88992696,-0.26715081,0.26715081,0.88992696,49.452423,1.1089849)"
+     id="g42"
+     style="fill:#000000;stroke:none">
+    <circle
+       cx="0"
+       cy="0"
+       r="2"
+       id="circle44"
+       style="fill:#404040;stroke:none" />
+    <text
+       dx="2.8"
+       dy="-2"
+       id="text46"
+       style="font-size:6px;fill:#000000;stroke:none" />
+  </g>
+  <jsondata
+     id="jsondata48">{&quot;nodes&quot;:{&quot;prefix&quot;:&quot;node&quot;,&quot;newUId&quot;:68,&quot;size&quot;:5,&quot;data&quot;:{&quot;node62&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge104&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge105&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge106&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge108&quot;,&quot;reversed&quot;:false}],&quot;attr&quot;:{},&quot;class&quot;:{&quot;node&quot;:true},&quot;pos&quot;:{&quot;x&quot;:-0.28318128036976814,&quot;y&quot;:-0.18285183122016765}},&quot;node63&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge104&quot;,&quot;reversed&quot;:true}],&quot;attr&quot;:{&quot;selected&quot;:false},&quot;class&quot;:{&quot;node&quot;:true},&quot;pos&quot;:{&quot;x&quot;:1.1357673779956254,&quot;y&quot;:0.31101800913356337}},&quot;node64&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge105&quot;,&quot;reversed&quot;:true}],&quot;attr&quot;:{},&quot;class&quot;:{&quot;node&quot;:true},&quot;pos&quot;:{&quot;x&quot;:-1.6382739872348144,&quot;y&quot;:0.5124318400922947}},&quot;node65&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge106&quot;,&quot;reversed&quot;:true}],&quot;attr&quot;:{&quot;selected&quot;:false},&quot;class&quot;:{&quot;node&quot;:true},&quot;pos&quot;:{&quot;x&quot;:-0.11790158874782243,&quot;y&quot;:-1.6483860876130056}},&quot;node67&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge108&quot;,&quot;reversed&quot;:true}],&quot;attr&quot;:{},&quot;class&quot;:{&quot;node&quot;:true},&quot;pos&quot;:{&quot;x&quot;:0.5631287066959707,&quot;y&quot;:-0.715542553678133}}}},&quot;edges&quot;:{&quot;prefix&quot;:&quot;edge&quot;,&quot;newUId&quot;:109,&quot;size&quot;:4,&quot;data&quot;:{&quot;edge104&quot;:{&quot;start&quot;:&quot;node62&quot;,&quot;end&quot;:&quot;node63&quot;,&quot;left&quot;:&quot;face48&quot;,&quot;right&quot;:&quot;face48&quot;,&quot;attr&quot;:{&quot;leftcornerselected&quot;:false},&quot;layout&quot;:{&quot;vert&quot;:[]},&quot;class&quot;:{&quot;edge&quot;:true}},&quot;edge105&quot;:{&quot;start&quot;:&quot;node62&quot;,&quot;end&quot;:&quot;node64&quot;,&quot;left&quot;:&quot;face48&quot;,&quot;right&quot;:&quot;face48&quot;,&quot;attr&quot;:{&quot;leftcornerselected&quot;:false},&quot;layout&quot;:{&quot;vert&quot;:[]},&quot;class&quot;:{&quot;edge&quot;:true}},&quot;edge106&quot;:{&quot;start&quot;:&quot;node62&quot;,&quot;end&quot;:&quot;node65&quot;,&quot;left&quot;:&quot;face48&quot;,&quot;right&quot;:&quot;face48&quot;,&quot;attr&quot;:{&quot;leftcornerselected&quot;:false},&quot;layout&quot;:{&quot;vert&quot;:[]},&quot;class&quot;:{&quot;edge&quot;:true}},&quot;edge108&quot;:{&quot;start&quot;:&quot;node62&quot;,&quot;end&quot;:&quot;node67&quot;,&quot;left&quot;:&quot;face48&quot;,&quot;right&quot;:&quot;face48&quot;,&quot;attr&quot;:{},&quot;layout&quot;:{&quot;vert&quot;:[]},&quot;class&quot;:{&quot;edge&quot;:true}}}},&quot;faces&quot;:{&quot;prefix&quot;:&quot;face&quot;,&quot;newUId&quot;:49,&quot;size&quot;:1,&quot;data&quot;:{&quot;face48&quot;:{&quot;edges&quot;:[{&quot;edge&quot;:&quot;edge108&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge108&quot;,&quot;reversed&quot;:true},{&quot;edge&quot;:&quot;edge106&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge106&quot;,&quot;reversed&quot;:true},{&quot;edge&quot;:&quot;edge105&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge105&quot;,&quot;reversed&quot;:true},{&quot;edge&quot;:&quot;edge104&quot;,&quot;reversed&quot;:false},{&quot;edge&quot;:&quot;edge104&quot;,&quot;reversed&quot;:true}],&quot;attr&quot;:{},&quot;layout&quot;:{&quot;outer&quot;:true},&quot;class&quot;:{&quot;face&quot;:true},&quot;uid&quot;:&quot;face48&quot;}}},&quot;outerface&quot;:&quot;face48&quot;}</jsondata>
+  <path
+     d="M -19.21014,-4.5300156 -4.9770397,-14.104325"
+     id="path3092"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <path
+     d="M -19.21014,-4.5300156 -37.3009,-7.6255719"
+     id="path3094"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <path
+     d="m -19.21014,-4.5300156 8.279761,17.4976506"
+     id="path3096"
+     style="fill:none;stroke:#404040;stroke-width:0.92916065px" />
+  <g
+     transform="matrix(0.88992696,-0.26715081,0.26715081,0.88992696,-19.21014,-4.5300156)"
+     id="g3100"
+     style="fill:#000000;stroke:none">
+    <circle
+       cx="0"
+       cy="0"
+       r="2"
+       id="circle3102"
+       style="fill:#404040;stroke:none" />
+    <text
+       dx="2.8"
+       dy="-2"
+       id="text3104"
+       style="font-size:6px;fill:#000000;stroke:none" />
+  </g>
+  <path
+     d="M -4.694933,1.2478819 C 2.6749255,12.142456 11.166284,11.18117 21.740429,3.6510969"
+     id="path3114"
+     style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow1Mend)" />
+</svg>

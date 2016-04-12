@@ -133,6 +133,7 @@ CMap.View = function(map,targetsvg) {
 	function dragstart(d)
 	{
 		if( allowDrag ) {
+			d3.event.sourceEvent.stopPropagation();
 			force.dragforce().drag = true;
 			force.dragforce().node = d;
 
@@ -185,6 +186,7 @@ CMap.View = function(map,targetsvg) {
 		{
 			svg.call(d3.behavior.zoom().on("zoom",function(){
 				globalGroup.attr("transform",
+					"translate(" + d3.event.translate + ") " +
 					"scale(" + d3.event.scale + ")");
 			})).on("dblclick.zoom", null);
 		} else
