@@ -1,4 +1,3 @@
-
 <html>
 <head>
 <style>
@@ -29,13 +28,13 @@ div#title {
 	margin-bottom:0px;
 }
 svg path.edge {
-	stroke: #905070;
-	stroke-width: 0.05;
+	stroke: #444444;
+	stroke-width: 1;
 	fill: none;
 }
 svg path.peeledge {
-	stroke: black;
-	stroke-width: 0.07;
+	stroke: red;
+	stroke-width: 1.4;
 	fill: none;
 }
 svg path.face {
@@ -63,10 +62,10 @@ svg path.dist4 {
 svg text.label {
 	pointer-events: none;
 	font-family: Verdana;
-	font-size: 0.3;
+	font-size: 6;
 }
 svg circle.node {
-	fill: red;
+	fill: #444444;
 }
 </style>
 </head>
@@ -93,7 +92,7 @@ var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
 	.attr("height","100%")
-	.attr("viewBox","-8 -5 16 10")
+	.attr("viewBox","-160 -100 320 200")
 	.attr("preserveAspectRatio", "xMidYMid meet")	
 	
 var planarmap = CMap.PlanarMap();

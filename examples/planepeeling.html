@@ -18,20 +18,20 @@ html, body {
 }
 svg path.edge {
 	stroke: #c0c0c0;
-	stroke-width: 0.03;
+	stroke-width: 0.6;
 	fill: none;
 }
 svg path.boundaryedge {
 	stroke: #b02020;
-	stroke-width: 0.08;
+	stroke-width: 1.6;
 }
 svg path.peeledge {
 	stroke: #20ff20;
-	stroke-width: 0.08;
+	stroke-width: 1.6;
 }
 svg path.explorededge {
 	stroke: #404040;
-	stroke-width: 0.05;
+	stroke-width: 1;
 }
 svg path.face {
 	stroke: none;
@@ -44,7 +44,7 @@ svg path.exploredface {
 svg text.label {
 	pointer-events: none;
 	font-family: Verdana;
-	font-size: 0.3;
+	font-size: 6;
 }
 svg circle.node {
 	fill: #c0c0c0;
@@ -58,7 +58,7 @@ svg circle.node.fullyexplored {
 svg circle.targetnode {
 	fill: #ffffff;
 	stroke: #0000ff;
-	stroke-width: 0.02;
+	stroke-width: 0.4;
 }
 div#title {
 	z-index:101; 
@@ -120,7 +120,7 @@ var svg = d3.select("#pmap").append("svg")
 	.attr("id","pmapsvg")
 	.attr("width","100%")
 	.attr("height","100%")
-	.attr("viewBox","-5 -5 10 9")
+	.attr("viewBox","-100 -100 200 180")
 	.attr("preserveAspectRatio", "xMidYMid meet")	
 	
 var planarmap = CMap.PlanarMap().fromJSON(mapdata);

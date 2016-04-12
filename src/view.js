@@ -18,6 +18,8 @@ CMap.View = function(map,targetsvg) {
 	var cornerradius = 7.0;
 	var cornersize = 7.0;
 	var zoomfactor = 20.0;
+	var noderadius = 2.0;
+	var nodelabeloffset = [0,0];
 	var screenToMapCoor = function(screenvec,y){
 		if( Array.isArray(screenvec) )
 			return new Vec2(screenvec[0]/zoomfactor,-screenvec[1]/zoomfactor);
@@ -31,7 +33,7 @@ CMap.View = function(map,targetsvg) {
 	}
 	
 	var nodeTextFunction = function(node){
-		return node.uid.substring(4);
+		return "";
 	}
 	
 	var allowFaceSelection = true;
@@ -205,11 +207,22 @@ CMap.View = function(map,targetsvg) {
 		helpLineLayer = globalGroup.append("g").attr("class","helpLineLayer");
 		nodeLayer = globalGroup.append("g").attr("class","nodeLayer");
 
-		view.updateLayers();
+		//view.updateLayers();
 	}
 	
 	view.nodeText = function(fun){
 		nodeTextFunction = fun;
+		return view;
+	}
+	
+	view.nodeRadius = function(r){
+		if (!arguments.length) return noderadius;
+		noderadius = r;
+		return view;
+	}
+	view.nodeLabelOffset = function(x){
+		if (!arguments.length) return nodelabeloffset;
+		nodelabeloffset = x;
 		return view;
 	}
 	
@@ -336,7 +349,7 @@ CMap.View = function(map,targetsvg) {
 			.attr("class","node");
 			
 		newNodeGroups.append("circle")
-			.attr("r","2");
+			.attr("r",noderadius);
 	
 		if( allowNodeSelection )
 		{
@@ -358,10 +371,10 @@ CMap.View = function(map,targetsvg) {
 		});
 		
 		newNodeGroups.append("text")
-				.attr("dx",2.8)
-				.attr("dy",-2)
+				.attr("dx",nodelabeloffset[0])//2.8)
+				.attr("dy",nodelabeloffset[1])//-2)
 				.attr("class","label")
-				.style("text-anchor","start");
+				.style("text-anchor","middle");
 				
 		nodeGroups.select("text").each(function(n){
 			d3.select(this).text((nodeTextFunction !== undefined ?
