@@ -12,16 +12,25 @@ Check out some examples here:
 * Schaeffer's bijection between labeled trees and quadrangulations:
 (www.nbi.dk/~budd/planarmap/examples/schaefferbijection.html)
 
+However, so far the main application is a planar map editor, which 
+allows loading and saving of planar maps in SVG or JSON format. Try the
+editor here: (www.nbi.dk/~budd/planarmap/examples/editor.html)
+
 Any comments, suggestions, contributions are more than welcome.
 
 ## Dependencies
 
 * [d3.js](d3js.org): Planarmap.js was modeled in the spirit of D3.js and
 D3.js is used to interact with the DOM.
+
+The editor currently relies on:
 * [SVG Crowbar](https://github.com/NYTimes/svg-crowbar): Allows saving to
 SVG, e.g. for editing in [Inkscape](inkscape.org).
+* [mcColorPicker](http://www.menucool.com/color-picker): color picker
+* [css-toggle-switch](github.com/ghinda/css-toggle-switch): toggle switch
 
 ## License
 
-MIT license: do whatever you like. However, if used in a scientific 
-publication, please provide proper attribution.
+MIT license: free to reuse. If used in an academic context, attribution
+(to [Timothy Budd](www.nbi.dk/~budd/)) would be appreciated but is not 
+mandatory.
