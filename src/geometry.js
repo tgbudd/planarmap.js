@@ -5,27 +5,27 @@ var Vec2 = function(x,y)
 };
 
 Vec2.prototype.addVec = function(vec){ 
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	this.x += vec.x; 
 	this.y += vec.y; 
 	return this; 
 };
 Vec2.prototype.plus = function(vec){
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return new Vec2(this.x+vec.x,this.y+vec.y);
 }
 Vec2.prototype.subVec = function(vec){ 
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	this.x -= vec.x; 
 	this.y -= vec.y; 
 	return this; 
 };
 Vec2.prototype.minus = function(vec){
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return new Vec2(this.x-vec.x,this.y-vec.y);
 }
 Vec2.prototype.distance = function(vec){
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return this.minus(vec).norm();
 }
 Vec2.prototype.mult = function(r) { 
@@ -37,21 +37,21 @@ Vec2.prototype.divide = function(r) {
 	return this.mult(1/r); 
 };
 Vec2.prototype.dot = function(vec) { 
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return (this.x*vec.x+this.y*vec.y); 
 };
 Vec2.prototype.cross = function(vec) { 
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	return (this.x*vec.y-this.y*vec.x); 
 };
 Vec2.prototype.angle = function(vec) {
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	// Returns the angle (between -PI and PI) this has to be rotated in
 	// counterclockwise direction to align it with vec_. 
 	return Math.atan2(this.cross(vec),this.dot(vec));
 };
 Vec2.prototype.anglePos = function(vec) {
-	console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
+	//console.assert(vec instanceof Vec2 && isFinite(vec.x) && isFinite(vec.y));
 	// Returns the angle (between 0 and 2 PI) this has to be rotated in
 	// counterclockwise direction to align it with vec_. 
 	var angle = this.angle(vec);

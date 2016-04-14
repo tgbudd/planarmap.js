@@ -264,7 +264,7 @@ CMap.force = function (map){
 		return 0.5 * springCoupling * length * length
 	}
 	function centerPullForce(calcForce) {
-		if( !centerPull.pull )
+		if( !centerPull.pull || centerPull.coupling == 0.0 )
 		{
 			return 0;
 		}

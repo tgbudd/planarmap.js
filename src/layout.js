@@ -33,6 +33,21 @@ CMap.EdgeLayout.prototype.fromJSON = function() {
 CMap.getVerticesOnEdge = function(orientededge,includefirst,includelast) {
 	includefirst = defaultFor(includefirst,true);
 	includelast = defaultFor(includelast,true);
+	/*if( orientededge.reversed )
+	{
+		return [].concat.call( 
+				(includelast ? [orientededge.edge.start] : [] ),
+				orientededge.edge.layout.vert,
+				(includefirst ? [orientededge.edge.end] : [] )
+			).reverse();
+	} else
+	{
+		return [].concat.call( 
+				(includefirst ? [orientededge.edge.start] : [] ),
+				orientededge.edge.layout.vert,
+				(includelast ? [orientededge.edge.end] : [] )
+			);	
+	}		*/
 	var vert = [];
 	if( includefirst )
 	{
