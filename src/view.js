@@ -253,15 +253,20 @@ CMap.View = function(map,targetsvg) {
 		}
 		return view;
 	}
-	view.updateLayers = function(){
-		view.updateFaceLayer();
-		view.updateEdgeLayer();
-		view.updateNodeLayer();
-		view.updateCornerLayer();
+	view.updateLayers = function(fullrefresh){
+		fullrefresh = defaultFor(fullrefresh,false);
+		view.updateFaceLayer(fullrefresh);
+		view.updateEdgeLayer(fullrefresh);
+		view.updateNodeLayer(fullrefresh);
+		view.updateCornerLayer(fullrefresh);
 		return view;
 	}
 	
-	view.updateFaceLayer = function(){
+	view.updateFaceLayer = function(fullrefresh){
+		if( fullrefresh )
+		{
+			faceLayer.selectAll("path").remove();
+		}
 		var facePaths = faceLayer.selectAll("path")
 			.data(planarmap.faces().array().filter(function(f) { return !f.layout.outer; }),
 			function(f){ return f.uid; });
@@ -291,7 +296,11 @@ CMap.View = function(map,targetsvg) {
 	}
 	
 
-	view.updateEdgeLayer = function(){
+	view.updateEdgeLayer = function(fullrefresh){
+		if( fullrefresh )
+		{
+			edgeLayer.selectAll("path").remove();
+		}
 		var edgePaths = edgeLayer.selectAll("path")
 			.data(planarmap.edges().array(),
 				function(e){return e.uid;});
@@ -338,8 +347,12 @@ CMap.View = function(map,targetsvg) {
 	}
 	
 	
-	view.updateNodeLayer = function()
+	view.updateNodeLayer = function(fullrefresh)
 	{
+		if( fullrefresh )
+		{
+			nodeLayer.selectAll("g.node").remove();
+		}
 		var nodeGroups = nodeLayer.selectAll("g.node")
 			.data(planarmap.nodes().array(),
 				function(n){return n.uid;}
@@ -387,8 +400,12 @@ CMap.View = function(map,targetsvg) {
 		return view;
 	}
 	
-	view.updateCornerLayer = function()
+	view.updateCornerLayer = function(fullrefresh)
 	{
+		if( fullrefresh )
+		{
+			cornerLayer.selectAll("path").remove();
+		}
 		var selectededges = [];
 		planarmap.edges().forEach(function(e){
 			if( e.attr.leftcornerselected )

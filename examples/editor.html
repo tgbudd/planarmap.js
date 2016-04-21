@@ -24,12 +24,16 @@ html, body {
 svg path.edge {
 	stroke: #404040;
 	stroke-width: 1;
+	stroke-linecap: round;
 	fill: none;
 }
 svg path.edge.selected {
 	stroke: #902020 !important;
 	stroke-width: 1.4 !important;
 	fill: none;
+}
+svg path.edge.dualedge {
+	stroke: #20d020;
 }
 svg path.face {
 	stroke: none;
@@ -38,7 +42,6 @@ svg path.face {
 svg path.face.selected {
 	stroke: red !important;
 	stroke-width: 2 !important;
-	//fill: #ff4444;
 }
 svg .cornerLayer path {
 	stroke: none;
@@ -47,12 +50,17 @@ svg .cornerLayer path {
 }
 svg text.label {
 	pointer-events: none;
-	//font-family: Verdana;
-	//font-size: 0.3;
 }
 svg circle.node {
 	fill: #404040;
 	stroke: none;
+}
+svg circle.node.dualnode {
+	fill: #20d020;
+}
+svg circle.node.intersection {
+	fill: none;
+	pointer-events: all;
 }
 svg circle.node.selected {
 	stroke: red !important;
@@ -198,6 +206,8 @@ input.color {
 		</dd>
 		<dt>F/R</dt><dd>Fix/release node position
 		</dd>
+		<dt>D</dt><dd>Draw dual map
+		</dd>
 	</dl>
 </div>
 
@@ -275,7 +285,7 @@ fileload.append("input").attr("type","file")
 				}
 			}
 			planarmap.fromJSON(json);
-			view.updateLayers();
+			view.updateLayers(true);
 			view.updatePositions();
 			force.resume();
 		}
@@ -297,11 +307,14 @@ fileload.append("input").attr("type","button")
 		.on("change",function(){
 			if( this.value != "" )
 			{
-				planarmap.fromJSON(exampledata[this.value]);
-				view.updateLayers();
+				// make copy of example data
+				var json = JSON.parse(JSON.stringify(exampledata[this.value]));
+				planarmap.fromJSON(json);
+				view.updateLayers(true);
 				view.updatePositions();
 			}
 			this.value="";
+			this.blur();
 		});
 	exampleselect
 		.append("option")
@@ -372,7 +385,7 @@ var svgdownload = filepanel.addEmpty()
 		
 		div.select("svg").attr("id","svgcopy")
 			.attr("viewBox",rect.x + " " + rect.y + " " + rect.width + " " + rect.height)
-			.append("jsondata").text("<![CDATA[" + 
+			.append("jsondata").text("<!"+"[CDATA[" + 
 				JSON.stringify(planarmap) + "]]>");
 		
 		crowbar.downloadById("svgcopy",
@@ -625,6 +638,9 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 82 ) // R
 	{
 		fixVertices(false);
+	} else if ( d3.event.keyCode == 68 ) // D
+	{
+		drawDual();
 	}
 });
 
@@ -762,6 +778,17 @@ function fixVertices(fix)
 		});
 		view.updateLayers();
 	}
+}
+
+function drawDual()
+{
+	CMap.addDualMap(planarmap,d3.event.shiftKey);
+	planarmap.edges().forEach(function(edge){
+		edge.layout.relSpringLength = 0.5;
+		edge.layout.relRepulsionStrength = 0.5;
+	})
+	view.updateLayers();
+	view.updatePositions();	
 }
 
 </script>

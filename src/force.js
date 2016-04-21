@@ -197,11 +197,11 @@ CMap.force = function (map){
 		var strength = 1;
 		if( "relRepulsionStrength" in edge1.edge.layout )
 		{
-			strength *= edge1.layout.relRepulsionStrength;
+			strength *= edge1.edge.layout.relRepulsionStrength;
 		}
 		if( "relRepulsionStrength" in edge2.edge.layout )
 		{
-			strength *= edge2.layout.relRepulsionStrength;
+			strength *= edge2.edge.layout.relRepulsionStrength;
 		}
 		vert1.forEach(function(v){
 			for( var i = 0;i<vert2.length-1;i++)

@@ -132,13 +132,17 @@ CMap.OrientedEdge.prototype.right = function(){
 CMap.OrientedEdge.prototype.clear = function(){
 	this.edge = null;
 }
-CMap.OrientedEdge.prototype.next = function(){
+CMap.OrientedEdge.prototype.next = function(steps){
+	steps = defaultFor(steps,1);
 	var index = this.left().edgeIndex(this);
-	return this.left().edges[(index+1)%this.left().edges.length];
+	return this.left().edges[(index+steps)%this.left().edges.length];
 }
-CMap.OrientedEdge.prototype.prev = function(){
-	var index = this.left().edgeIndex(this)-1;
-	if( index < 0 ) index = this.left().edges.length-1;
+CMap.OrientedEdge.prototype.prev = function(steps){
+	steps = defaultFor(steps,1);
+	var index = this.left().edgeIndex(this)-steps;
+	while( index < 0 ) {
+		index += this.left().edges.length;
+	}
 	return this.left().edges[index];
 }
 CMap.OrientedEdge.prototype.reverse = function(){

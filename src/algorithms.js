@@ -449,3 +449,35 @@ CMap.applyToDisk = function(planarmap,boundary,facefunction) {
 		})
 	}
 } 
+
+// Split every edge, insert new node in every face and connect with edges,
+// such that the resulting map corresponds to map + dual map.
+CMap.addDualMap = function(planarmap,includeouter,intersectionnodeclass,dualedgeclass,dualnodeclass) {
+	includeouter = defaultFor(includeouter,true);
+	intersectionnodeclass = defaultFor(intersectionnodeclass,"intersection");
+	dualedgeclass = defaultFor(dualedgeclass,"dualedge");
+	dualnodeclass = defaultFor(dualnodeclass,"dualnode");
+	planarmap.edges().forEach(function(e){
+		var node = planarmap.splitEdge(e.getOriented());
+		node.class[intersectionnodeclass] = true;
+	});	
+	planarmap.faces().forEach(function(f){
+		if( includeouter || !f.layout.outer ) {
+			var curEdge = ( f.edges[0].start().class[intersectionnodeclass] ?
+				f.edges[0] : f.edges[1] );
+			var lastEdge = curEdge.prev(2);
+			var newEdge = planarmap.insertEdgeNextTo(curEdge)
+				.getOriented(true);
+			newEdge.edge.class[dualedgeclass] = true;
+			newEdge.start().class[dualnodeclass] = true;
+			
+			while( newEdge.next() != lastEdge )
+			{
+				var nextCorner = newEdge.next(3);
+				newEdge = planarmap.insertDiagonal(newEdge.left(),[newEdge,nextCorner])
+					.getOriented();
+				newEdge.edge.class[dualedgeclass] = true;					
+			}
+		}
+	});
+}
