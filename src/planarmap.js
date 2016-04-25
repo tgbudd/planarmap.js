@@ -163,6 +163,7 @@ CMap.Node = function (){
 	this.attr = {};
 	this.class = {"node":true};
 	this.pos = new Vec2(0,0);
+	this.layout = {};
 }
 CMap.Node.prototype.fromJSON = function(){
 	this.edges.forEach(function(e) {
@@ -175,7 +176,8 @@ CMap.Node.prototype.toJSON = function(){
 		edges:this.edges,
 		attr:this.attr,
 		class:this.class,
-		pos:this.pos
+		pos:this.pos,
+		layout:this.layout
 	};
 }
 CMap.Node.prototype.clear = function(){

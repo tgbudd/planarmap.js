@@ -370,6 +370,7 @@ var svgdownload = filepanel.addEmpty()
 		var div = d3.select("body").append("div")
 			.style("display","none")
 			.html(content);
+		div.select("#zoomgroup").attr("transform",null);
 		div.select(".backgroundLayer").remove();
 		div.select(".helpLineLayer").remove();
 		div.select(".cornerLayer").remove();
@@ -382,6 +383,8 @@ var svgdownload = filepanel.addEmpty()
 		rect.y -= margin;
 		rect.width += 2*margin;
 		rect.height += 2*margin;
+		
+		if( typeof overrideBBox != 'undefined' ) rect = overrideBBox;
 		
 		div.select("svg").attr("id","svgcopy")
 			.attr("viewBox",rect.x + " " + rect.y + " " + rect.width + " " + rect.height)
@@ -464,6 +467,7 @@ var dropdown = selectpanel.addEmpty()
 		});
 		view.updateLayers();
 		this.value = "";
+		this.blur();
 	})
 	.append("option")
 	.attr("class","selectheader")
