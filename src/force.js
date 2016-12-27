@@ -1,5 +1,22 @@
 function defaultFor(arg, val) { return typeof arg !== 'undefined' ? arg : val; }
 
+Math.tanh = Math.tanh || function(x){
+    var a = Math.exp(+x), b = Math.exp(-x);
+    return a == Infinity ? 1 : b == Infinity ? -1 : (a - b) / (a + b);
+}
+Math.sinh = Math.sinh || function(x) {
+  var y = Math.exp(x);
+  return (y - 1 / y) / 2;
+}
+Math.sinh = Math.sinh || function(x) {
+  var y = Math.exp(x);
+  return (y - 1 / y) / 2;
+}
+Math.cosh = Math.cosh || function(x) {
+  var y = Math.exp(x);
+  return (y + 1 / y) / 2;
+}
+
 var CMap = CMap || {};
 
 CMap.force = function (map){
