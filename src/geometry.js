@@ -555,3 +555,13 @@ CMap.pointToCorner = function(face,point) {
 	});
 	return result;
 }
+
+CMap.edgeLength = function(edge) {
+	var vert = CMap.getVerticesOnEdge(edge.getOriented(),true,true);
+	var length = 0;
+	for(var i=0;i<vert.length-1;i++)
+	{
+		length += vert[i].pos.distance(vert[i+1].pos);
+	}
+	return length;
+}

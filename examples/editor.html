@@ -66,6 +66,9 @@ svg circle.node.selected {
 	stroke: red !important;
 	stroke-width: 0.6 !important;
 }
+svg path.edge.contract {
+	stroke: #cccccc;
+}
 div#title {
 	z-index:101; 
 	position:absolute;
@@ -200,6 +203,15 @@ input.color {
 		<dt>S</dt><dd>Split vertex or edge
 			<br /><img src="./images/splitedge.png" width=120px>
 			<br /><img src="./images/splitvertex.png" width=110px>
+		</dd>
+		<dt>C</dt><dd>Contract edge
+			<br /><img src="./images/contractedge.png" width=110px>
+		</dd>
+		<dt>G</dt><dd>Glue edges
+			<br /><img src="./images/glueedges.png" width=110px>
+		</dd>
+		<dt>2-9</dt><dd>Insert face of that degree
+			<br /><img src="./images/insertface.png" width=110px>
 		</dd>
 		<dt>M</dt><dd>Toggle marker
 			<br /><img src="./images/addmarker.png" width=110px>
@@ -645,6 +657,15 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 68 ) // D
 	{
 		drawDual();
+	} else if ( d3.event.keyCode == 67 ) // C
+	{
+		startContractEdge();
+	} else if ( d3.event.keyCode == 71 ) // G
+	{
+		startGlueEdges();
+	} else if ( d3.event.keyCode >= 50 && d3.event.keyCode <= 57 ) // 2-9
+	{
+		createFace(d3.event.keyCode-48);
 	}
 });
 
@@ -793,6 +814,194 @@ function drawDual()
 	})
 	view.updateLayers();
 	view.updatePositions();	
+}
+
+function createFace(degree)
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 1 &&
+		selection.edges.length == 0 )
+	{
+		var corners = [selection.corners[0], selection.corners[0].next()];
+		view.clearSelection();
+		var newedges = [
+			planarmap.insertDiagonal(corners[0].left(),
+				[corners[0],corners[1]])
+		];
+		
+		while( newedges.length + 1 < degree )
+		{
+			var longestedge;
+			var longestlength = 0.0;
+			newedges.forEach(function(edge){
+				var length = CMap.edgeLength(edge);
+				if( length > longestlength )
+				{
+					longestlength = length;
+					longestedge = edge;
+				}
+			});
+			planarmap.splitEdge(longestedge.getOriented());
+			newedges.push( longestedge.getOriented().next().edge );
+		}
+		view.updateLayers();
+		view.updatePositions();		
+	}
+}
+
+function startContractEdge()
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 0 &&
+		selection.edges.length == 1 )
+	{
+		var edge = selection.edges[0];
+		
+		// make sure it's not a loop
+		if( edge.start != edge.end )
+		{
+			view.clearSelection();
+			// use force to contract edge a bit
+			edge.layout["relSpringLength"] = 0.05;
+			edge.layout["relSpringCoupling"] = 8.0;
+			force.resume();
+			
+			// then perform contraction after delay
+			setTimeout(function(){
+				contractEdge(edge.getOriented());
+			},400);
+		}
+	}
+}
+
+function contractEdge(orientededge)
+{
+	var contractleft = true;
+	while( !orientededge.isReverse( orientededge.prev() ) )
+	{
+		// reroute edges alternatingly on the left and the right to
+		// avoid too much twisting/torque
+		if( contractleft )
+		{
+			var nextedge = orientededge.prev();
+			planarmap.insertDiagonal(nextedge.left(),
+				[nextedge,orientededge.next()]);
+			planarmap.removeEdge(nextedge.edge);
+		} else
+		{
+			var nextedge = orientededge.reverse().next();
+			planarmap.insertDiagonal(nextedge.left(),
+				[nextedge.next(),nextedge.prev()]);
+			planarmap.removeEdge(nextedge.edge);	
+		}
+		contractleft = !contractleft;
+	}
+	planarmap.removeEdge(orientededge.edge);
+		
+	view.updateLayers();
+	view.updatePositions();		
+}
+
+function filterInPlace(a, condition) {
+  var i = 0, j = 0;
+
+  while (i < a.length) {
+    const val = a[i];
+    if (condition(val, i, a)) a[j++] = val;
+    i++;
+  }
+
+  a.length = j;
+  return a;
+}
+
+function startGlueEdges()
+{
+	var selection = view.getSelection();
+	var edgepairs = [];
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 2 &&
+		selection.edges.length == 0 )
+	{
+		edgepairs.push([selection.corners[0],selection.corners[1]]);
+	}
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 1 &&
+		selection.edges.length == 0 )
+	{
+		edgepairs.push([selection.corners[0],selection.corners[0].prev()]);
+	}				
+	if( selection.edges.length == 2 )
+	{
+		edgepairs.push([selection.edges[0].getOriented(),selection.edges[1].getOriented()]);
+		edgepairs.push([selection.edges[0].getOriented(true),selection.edges[1].getOriented()]);		
+		edgepairs.push([selection.edges[0].getOriented(),selection.edges[1].getOriented(true)]);
+		edgepairs.push([selection.edges[0].getOriented(true),selection.edges[1].getOriented(true)]);
+	}				
+	if( selection.faces.length == 1 && selection.edges.length == 2 )
+	{
+		filterInPlace(edgepairs,function(p){ return p[0].left() == selection.faces[0]; });
+	}	
+	if( selection.corners.length >= 1 && selection.edges.length == 2 )
+	{
+		filterInPlace(edgepairs,function(p){ return p[0].left() == selection.corners[0].left(); });
+	}
+	filterInPlace(edgepairs,function(p){ 
+		return (p[0].left() == p[1].left())
+			&& !p[0].isReverse(p[1])
+			&& p[0] != p[1]
+			&& (p[0].start() != p[1].end() || p[0].prev().isEqual(p[1]))
+			&& (p[1].start() != p[0].end() || p[1].prev().isEqual(p[0])); 
+		
+	});
+	if( edgepairs.length == 1 )
+	{
+		view.clearSelection();
+		var edges = edgepairs[0];
+		if( !edges[0].next().isEqual(edges[1]) )
+		{
+			var tempedge0 = planarmap.insertDiagonal(edges[0].left(),
+				[edges[0].next(),edges[1]]);
+			tempedge0.class["contract"] = true;
+			tempedge0.layout["relSpringLength"] = 0.05;
+			tempedge0.layout["relSpringCoupling"] = 12.0;
+		}
+		if( !edges[1].next().isEqual(edges[0]) )
+		{
+			var tempedge1 = planarmap.insertDiagonal(edges[1].left(),
+				[edges[0],edges[1].next()]);
+			tempedge1.class["contract"] = true;
+			tempedge1.layout["relSpringLength"] = 0.05;
+			tempedge1.layout["relSpringCoupling"] = 12.0;
+		}
+		view.updateLayers();
+		view.updatePositions();	
+		force.resume();
+	
+		// then perform contraction after delay
+		setTimeout(function(){
+			planarmap.removeEdge(edges[1].edge);
+			if( tempedge0 )
+			{
+				contractEdge(tempedge0.getOriented());
+			}
+			if( tempedge1 )
+			{
+				contractEdge(tempedge1.getOriented());
+			}
+			//planarmap.removeEdge(edges[0].edge);
+			console.assert( planarmap.checkIncidence());
+			view.updateLayers();
+			view.updatePositions();	
+		},600);
+		
+	}		
 }
 
 </script>

@@ -267,18 +267,23 @@ CMap.force = function (map){
 		{
 			targetlength *= edge.layout.relSpringLength;
 		}
+		var coupling = springCoupling;
+		if( "relSpringCoupling" in edge.layout )
+		{
+			coupling *= edge.layout.relSpringCoupling;
+		}
 		length -= targetlength;
 		if( calcForce )
 		{
 			for(var i=0;i<vert.length-1;i++)
 			{
 				var forcevec = vert[i+1].pos.minus(vert[i].pos).normalize()
-					.mult(springCoupling*length);
+					.mult(coupling*length);
 				vert[i].force.addVec(forcevec);
 				vert[i+1].force.subVec(forcevec);
 			}
 		}
-		return 0.5 * springCoupling * length * length
+		return 0.5 * coupling * length * length
 	}
 	function centerPullForce(calcForce) {
 		if( !centerPull.pull || centerPull.coupling == 0.0 )
