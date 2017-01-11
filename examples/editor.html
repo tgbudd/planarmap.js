@@ -750,6 +750,7 @@ function splitVertexOrEdge()
 	{
 		var splitedge = selection.edges[0].getOriented();
 		view.clearSelection();
+		addStateToUndoHistory();
 		planarmap.splitEdge(splitedge);
 		view.updateLayers();
 		view.updatePositions();
