@@ -72,13 +72,15 @@ svg path.edge.contract {
 div#title {
 	z-index:101; 
 	position:absolute;
-	top:10px;
-	left:30px;
+	top:0px;
+	left:20px;
+	pointer-events: none;
 }
 #title h1 {
-	color: black;
-	font-weight: 300;
-	font-size: 32px;
+	color: #aaaaaa;
+	font-weight: bold;
+	font-family: "Helvetica", sans-serif;
+	font-size: 40px;
 	text-rendering: optimizeLegibility;
 	margin-bottom:0px;
 }
@@ -187,7 +189,7 @@ input.color {
 <body>
 	
 <div id="title">
-	<h1>Editor</h1>
+	<h1>Planarmap.js editor</h1>
 </div>
 <div class="editorhints">
 	<dl class="controls">
@@ -195,6 +197,7 @@ input.color {
 		<dt>Mousewheel</dt><dd>Zoom</dd>
 		<dt>Click</dt><dd>Select</dd>
 		<dt>Shift-Click</dt><dd>Select more</dd>
+		<dt>Backspace</dt><dd>Undo</dd>
 		<dt>Delete</dt><dd>Delete edge</dd>
 		<dt>E</dt><dd>Create edge
 			<br /><img src="./images/newedge1.png" width=100px>
@@ -320,6 +323,7 @@ fileload.append("input").attr("type","button")
 			if( this.value != "" )
 			{
 				// make copy of example data
+				addStateToUndoHistory();
 				var json = JSON.parse(JSON.stringify(exampledata[this.value]));
 				planarmap.fromJSON(json);
 				view.updateLayers(true);
@@ -412,6 +416,7 @@ filepanel.addEmpty()
 	.append("input").attr("type","button")
 	.attr("value","Clear (single edge map)")
 	.on("click",function(){
+		addStateToUndoHistory();
 		planarmap.singleEdgeMap();
 		view.updateLayers();
 		view.updatePositions();
@@ -492,6 +497,7 @@ setclassDropDown
 	.attr("list","selectclasses")
 	.attr("value","Set class ...")
 	.on("change",function(event){
+		addStateToUndoHistory();
 		var classname = this.value;
 		view.getSelection().faces.forEach(function(f){
 			f.class[classname] = true;
@@ -531,6 +537,7 @@ selectpanel.addEmpty()
 	.append("input").attr("type","button")
 	.attr("value","Clear classes of selection")
 	.on("click",function(){
+		addStateToUndoHistory();
 		view.getSelection().faces.forEach(function(f){
 			for( var key in f.class ) {
 				if(f.class.hasOwnProperty(key) && key != "face" )
@@ -582,6 +589,7 @@ selectpanel.addEmpty()
 	.append("input").attr("type","button")
 	.attr("value","Clear styles of selection")
 	.on("click",function(){
+		addStateToUndoHistory();
 		var clearstyle = function(obj){
 			if( obj.attr.style )
 			{
@@ -600,6 +608,7 @@ selectpanel.addEmpty()
 	}); 	
 	
 function OnColorChanged(selectedColor, colorPickerIndex) {
+	addStateToUndoHistory();
 	view.getSelection().faces.forEach(function(f){
 		if( !f.attr.style )
 		{
@@ -639,6 +648,9 @@ d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 46 ) // Delete
 	{
 		deleteEdge();
+	} else if( d3.event.keyCode == 8 ) // Backspace
+	{
+		performUndo();
 	} else if ( d3.event.keyCode == 69 ) // E
 	{
 		createEdge();
@@ -669,6 +681,35 @@ d3.select("body").on("keydown",function(){
 	}
 });
 
+var undoHistory = [];
+function performUndo()
+{
+	if( undoHistory.length > 0 )
+	{
+		view.clearSelection();
+		force.stop();
+		planarmap.fromJSON(JSON.parse(undoHistory.pop()));
+		planarmap.edges().forEach(function(e){
+			e.attr.selected = false;
+			e.attr.rightcornerselected = false;
+			e.attr.leftcornerselected = false;
+		});
+		planarmap.faces().forEach(function(f){
+			f.attr.selected = false;
+		});
+		planarmap.nodes().forEach(function(n){
+			n.attr.selected = false;
+		});	
+		view.updateLayers(true);
+		view.updatePositions();		
+		force.resume();
+	}
+}
+function addStateToUndoHistory()
+{
+	undoHistory.push( JSON.stringify(planarmap) );
+}
+
 function createEdge()
 {
 	var selection = view.getSelection();
@@ -678,6 +719,7 @@ function createEdge()
 	{
 		if( selection.corners.length == 1 )
 		{
+			addStateToUndoHistory();
 			var edge = selection.corners[0];
 			view.clearSelection();
 			planarmap.insertEdgeNextTo(edge);
@@ -686,6 +728,7 @@ function createEdge()
 			&& selection.corners[0].left() ==
 			   selection.corners[1].left() )
 		{
+			addStateToUndoHistory();
 			var edge1 = selection.corners[0],
 				edge2 = selection.corners[1];
 			view.clearSelection();
@@ -721,6 +764,7 @@ function splitVertexOrEdge()
 			var corner1 = selection.corners[0],
 				corner2 = selection.corners[1];
 			view.clearSelection();
+			addStateToUndoHistory();
 			planarmap.splitVertex([corner1,corner2]);
 			view.updateLayers();
 			view.updatePositions();
@@ -740,8 +784,8 @@ function deleteEdge()
 		if( !(edge.start.edges.length > 1 && edge.end.edges.length > 1
 			&& edge.left == edge.right) && planarmap.numEdges() > 1 )
 		{
-
 			view.clearSelection();
+			addStateToUndoHistory();
 			planarmap.removeEdge(edge);
 			view.updateLayers();
 			view.updatePositions();
@@ -757,6 +801,7 @@ function toggleMarker()
 		selection.corners.length > 0 &&
 		selection.edges.length == 0 )
 	{
+		addStateToUndoHistory();
 		selection.corners.forEach(function(oredge){
 			if( !oredge.edge.attr.marker )
 			{
@@ -794,6 +839,7 @@ function fixVertices(fix)
 		selection.corners.length == 0 &&
 		selection.edges.length == 0 )
 	{
+		addStateToUndoHistory();
 		selection.nodes.forEach(function(node){
 			if( !node.layout )
 			{
@@ -807,6 +853,7 @@ function fixVertices(fix)
 
 function drawDual()
 {
+	addStateToUndoHistory();
 	CMap.addDualMap(planarmap,d3.event.shiftKey);
 	planarmap.edges().forEach(function(edge){
 		edge.layout.relSpringLength = 0.5;
@@ -824,6 +871,7 @@ function createFace(degree)
 		selection.corners.length == 1 &&
 		selection.edges.length == 0 )
 	{
+		addStateToUndoHistory();
 		var corners = [selection.corners[0], selection.corners[0].next()];
 		view.clearSelection();
 		var newedges = [
@@ -864,6 +912,7 @@ function startContractEdge()
 		// make sure it's not a loop
 		if( edge.start != edge.end )
 		{
+			addStateToUndoHistory();
 			view.clearSelection();
 			// use force to contract edge a bit
 			edge.layout["relSpringLength"] = 0.05;
@@ -962,6 +1011,7 @@ function startGlueEdges()
 	});
 	if( edgepairs.length == 1 )
 	{
+		addStateToUndoHistory();
 		view.clearSelection();
 		var edges = edgepairs[0];
 		if( !edges[0].next().isEqual(edges[1]) )

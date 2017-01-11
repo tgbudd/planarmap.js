@@ -769,6 +769,7 @@ CMap.PlanarMap = function (){
 		map.faces().forEach(function(f){
 			f.updateReferences(dict);
 		});
+		map.outerface(dict[outerface.uid]);
 		return map;
 	}
 	planarmap.toJSON = function(){
