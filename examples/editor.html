@@ -681,6 +681,26 @@ d3.select("body").on("keydown",function(){
 	}
 });
 
+function copyAttributes(fromObject,toObject)
+{
+	toObject.class = toObject.class || {};
+	for(var key in fromObject.class)
+	{
+		if( fromObject.class.hasOwnProperty(key) )
+		{
+			toObject.class[key] = fromObject.class[key];
+		}
+	}
+	toObject.attr.style = toObject.attr.style || {};
+	for(var key in fromObject.attr.style)
+	{
+		if( fromObject.attr.style.hasOwnProperty(key) )
+		{
+			toObject.attr.style[key] = fromObject.attr.style[key];
+		}
+	}
+}
+
 var undoHistory = [];
 function performUndo()
 {
@@ -722,8 +742,9 @@ function createEdge()
 			addStateToUndoHistory();
 			var edge = selection.corners[0];
 			view.clearSelection();
-			planarmap.insertEdgeNextTo(edge);
-
+			var newedge = planarmap.insertEdgeNextTo(edge);
+			copyAttributes(edge.edge,newedge);
+			copyAttributes(newedge.start,newedge.end);
 		} else if( selection.corners.length == 2 
 			&& selection.corners[0].left() ==
 			   selection.corners[1].left() )
@@ -732,8 +753,9 @@ function createEdge()
 			var edge1 = selection.corners[0],
 				edge2 = selection.corners[1];
 			view.clearSelection();
-			planarmap.insertDiagonal(edge1.left(),[edge1,edge2]);
-
+			var edge = planarmap.insertDiagonal(edge1.left(),[edge1,edge2]);
+			copyAttributes(edge.left,edge.right);
+			copyAttributes(edge1.edge,edge);
 		}
 		view.updateLayers();
 		view.updatePositions();
@@ -752,6 +774,8 @@ function splitVertexOrEdge()
 		view.clearSelection();
 		addStateToUndoHistory();
 		planarmap.splitEdge(splitedge);
+		copyAttributes(splitedge.edge,splitedge.next().edge);
+		copyAttributes(splitedge.start(),splitedge.end());
 		view.updateLayers();
 		view.updatePositions();
 	} else if( selection.faces.length == 0 &&
@@ -766,7 +790,9 @@ function splitVertexOrEdge()
 				corner2 = selection.corners[1];
 			view.clearSelection();
 			addStateToUndoHistory();
-			planarmap.splitVertex([corner1,corner2]);
+			var newedge = planarmap.splitVertex([corner1,corner2]);
+			copyAttributes(newedge.getOriented().prev().edge,newedge);
+			copyAttributes(newedge.start,newedge.end);
 			view.updateLayers();
 			view.updatePositions();
 		}
@@ -879,6 +905,8 @@ function createFace(degree)
 			planarmap.insertDiagonal(corners[0].left(),
 				[corners[0],corners[1]])
 		];
+		copyAttributes(corners[0].edge,newedges[0]);
+		copyAttributes(corners[0].right(),corners[0].left());
 		
 		while( newedges.length + 1 < degree )
 		{
@@ -893,6 +921,8 @@ function createFace(degree)
 				}
 			});
 			planarmap.splitEdge(longestedge.getOriented());
+			copyAttributes(longestedge,longestedge.getOriented().next().edge);
+			copyAttributes(longestedge.start,longestedge.end);
 			newedges.push( longestedge.getOriented().next().edge );
 		}
 		view.updateLayers();
@@ -938,14 +968,20 @@ function contractEdge(orientededge)
 		if( contractleft )
 		{
 			var nextedge = orientededge.prev();
-			planarmap.insertDiagonal(nextedge.left(),
+			var newedge = planarmap.insertDiagonal(nextedge.left(),
 				[nextedge,orientededge.next()]);
+			copyAttributes(nextedge.edge,newedge);
+			copyAttributes(newedge.left,newedge.right);
+			copyAttributes(nextedge.right(),nextedge.left());
 			planarmap.removeEdge(nextedge.edge);
 		} else
 		{
 			var nextedge = orientededge.reverse().next();
-			planarmap.insertDiagonal(nextedge.left(),
+			var newedge = planarmap.insertDiagonal(nextedge.left(),
 				[nextedge.next(),nextedge.prev()]);
+			copyAttributes(newedge.left,newedge.right);
+			copyAttributes(nextedge.edge,newedge);
+			copyAttributes(nextedge.right(),newedge.left);
 			planarmap.removeEdge(nextedge.edge);	
 		}
 		contractleft = !contractleft;
@@ -1019,6 +1055,7 @@ function startGlueEdges()
 		{
 			var tempedge0 = planarmap.insertDiagonal(edges[0].left(),
 				[edges[0].next(),edges[1]]);
+			copyAttributes(tempedge0.left,tempedge0.right);
 			tempedge0.class["contract"] = true;
 			tempedge0.layout["relSpringLength"] = 0.05;
 			tempedge0.layout["relSpringCoupling"] = 12.0;
@@ -1027,6 +1064,7 @@ function startGlueEdges()
 		{
 			var tempedge1 = planarmap.insertDiagonal(edges[1].left(),
 				[edges[0],edges[1].next()]);
+			copyAttributes(tempedge1.left,tempedge1.right);
 			tempedge1.class["contract"] = true;
 			tempedge1.layout["relSpringLength"] = 0.05;
 			tempedge1.layout["relSpringCoupling"] = 12.0;
@@ -1037,6 +1075,7 @@ function startGlueEdges()
 	
 		// then perform contraction after delay
 		setTimeout(function(){
+			copyAttributes(edges[1].right(),edges[1].left());
 			planarmap.removeEdge(edges[1].edge);
 			if( tempedge0 )
 			{
