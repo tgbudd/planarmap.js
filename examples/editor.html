@@ -197,7 +197,7 @@ input.color {
 		<dt>Mousewheel</dt><dd>Zoom</dd>
 		<dt>Click</dt><dd>Select</dd>
 		<dt>Shift-Click</dt><dd>Select more</dd>
-		<dt>Backspace</dt><dd>Undo</dd>
+		<dt>Ctrl+Z</dt><dd>Undo</dd>
 		<dt>Delete</dt><dd>Delete edge</dd>
 		<dt>E</dt><dd>Create edge
 			<br /><img src="./images/newedge1.png" width=100px>
@@ -648,7 +648,7 @@ d3.select("body").on("keydown",function(){
 	if( d3.event.keyCode == 46 ) // Delete
 	{
 		deleteEdge();
-	} else if( d3.event.keyCode == 8 ) // Backspace
+	} else if( d3.event.keyCode == 90 && d3.event.ctrlKey ) // Ctrl+Z
 	{
 		performUndo();
 	} else if ( d3.event.keyCode == 69 ) // E
