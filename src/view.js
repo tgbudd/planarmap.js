@@ -361,8 +361,7 @@ CMap.View = function(map,targetsvg) {
 		var newNodeGroups = nodeGroups.enter().append("g")
 			.attr("class","node");
 			
-		newNodeGroups.append("circle")
-			.attr("r",noderadius);
+		newNodeGroups.append("circle");
 	
 		if( allowNodeSelection )
 		{
@@ -380,6 +379,13 @@ CMap.View = function(map,targetsvg) {
 				{
 					thiselement.style(stylename,n.attr.style[stylename]);
 				} 
+			}
+			if( n.attr.relativeradius )
+			{
+				thiselement.attr('r', noderadius * n.attr.relativeradius );
+			} else
+			{
+				thiselement.attr('r', noderadius );
 			}
 		});
 		

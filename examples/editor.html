@@ -29,7 +29,6 @@ svg path.edge {
 }
 svg path.edge.selected {
 	stroke: #902020 !important;
-	stroke-width: 1.4 !important;
 	fill: none;
 }
 svg path.edge.dualedge {
@@ -64,7 +63,7 @@ svg circle.node.intersection {
 }
 svg circle.node.selected {
 	stroke: red !important;
-	stroke-width: 0.6 !important;
+	stroke-width: 0.6;
 }
 svg path.edge.contract {
 	stroke: #cccccc;
@@ -607,6 +606,38 @@ selectpanel.addEmpty()
 		view.updateLayers();
 	}); 	
 	
+function selectionStrokeWidth(width)	{
+	if (!arguments.length) {
+		return 1.0;//view.getSelection()
+	}
+	view.getSelection().edges.forEach(function(e){
+		if( !e.attr.style ) 
+		{
+			e.attr["style"] = {};
+		}
+		e.attr.style["stroke-width"] = width;
+	});
+	view.getSelection().nodes.forEach(function(n){
+		if( !n.attr.style ) 
+		{
+			n.attr["style"] = {};
+		}
+		n.attr.style["stroke-width"] = width;
+	});
+	view.updateLayers();
+}
+selectpanel.addSlider("Stroke-width","strokewidth", selectionStrokeWidth, 0.4, 3.0, 0.1 );
+function selectionNodeSize(size)	{
+	if (!arguments.length) {
+		return 1.0;//view.getSelection()
+	}
+	view.getSelection().nodes.forEach(function(n){
+		n.attr["relativeradius"] = size;
+	});
+	view.updateLayers();
+}
+selectpanel.addSlider("Node size","nodesize", selectionNodeSize, 0.2, 3.0, 0.1 );
+	
 function OnColorChanged(selectedColor, colorPickerIndex) {
 	addStateToUndoHistory();
 	view.getSelection().faces.forEach(function(f){
@@ -698,6 +729,10 @@ function copyAttributes(fromObject,toObject)
 		{
 			toObject.attr.style[key] = fromObject.attr.style[key];
 		}
+	}
+	if( fromObject.attr.relativeradius )
+	{
+		toObject.attr.relativeradius = fromObject.attr.relativeradius;
 	}
 }
 
