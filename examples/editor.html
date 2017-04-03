@@ -196,8 +196,9 @@ input.color {
 		<dt>Mousewheel</dt><dd>Zoom</dd>
 		<dt>Click</dt><dd>Select</dd>
 		<dt>Shift-Click</dt><dd>Select more</dd>
+		<dt>Arrows</dt><dd>Move corner selection</dd>
 		<dt>Ctrl+Z</dt><dd>Undo</dd>
-		<dt>Delete</dt><dd>Delete edge</dd>
+		<dt>Delete</dt><dd>Delete edge/face</dd>
 		<dt>E</dt><dd>Create edge
 			<br /><img src="./images/newedge1.png" width=100px>
 			<br /><img src="./images/newedge2.png" width=110px>
@@ -685,6 +686,18 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 69 ) // E
 	{
 		createEdge();
+	} else if ( d3.event.keyCode == 37 ) // left arrow
+	{
+		moveSelection(-1,0);
+	} else if ( d3.event.keyCode == 39 ) // right arrow
+	{
+		moveSelection(1,0);
+	} else if ( d3.event.keyCode == 38 ) // up arrow
+	{
+		moveSelection(0,1);
+	} else if ( d3.event.keyCode == 40 ) // down arrow
+	{
+		moveSelection(0,-1);
 	} else if ( d3.event.keyCode == 83 ) // S
 	{
 		splitVertexOrEdge();
@@ -763,6 +776,45 @@ function performUndo()
 function addStateToUndoHistory()
 {
 	undoHistory.push( JSON.stringify(planarmap) );
+}
+
+function moveSelection(alongface,alongvertex)
+{
+	var selection = view.getSelection();
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.edges.length == 0 &&
+		selection.corners.length == 0 )
+	{
+		view.addToSelection(planarmap.edges().random().getOriented());
+		view.updateLayers();
+	}
+	if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.edges.length == 0 &&
+		selection.corners.length == 1 )
+	{
+		var corner = selection.corners[0];
+		view.clearSelection();
+		if( alongface == 1 )
+		{
+			view.addToSelection(corner.next());
+		}
+		if( alongface == -1 )
+		{
+			view.addToSelection(corner.prev());
+		}
+		if( alongvertex == 1 )
+		{
+			view.addToSelection(corner.reverse().next());
+		}
+		if( alongvertex == -1 )
+		{
+			view.addToSelection(corner.prev().reverse());
+		}		
+		view.updateLayers();
+	}
+	
 }
 
 function createEdge()
@@ -852,6 +904,25 @@ function deleteEdge()
 			view.updateLayers();
 			view.updatePositions();
 		}
+	}
+	if( selection.faces.length == 1 &&
+		selection.nodes.length == 0 &&
+		selection.corners.length == 0 &&
+		selection.edges.length == 0 )
+	{
+		var face = selection.faces[0];
+		var outeredges = face.edges.filter(function(e){ return e.right().layout && e.right().layout.outer; });		
+		var nextdelete;
+		while( (nextdelete = outeredges.filter(function(e) {
+				return (e.start().edges.length == 1 || e.end().edges.length == 1
+					|| e.left() != e.right() ) && planarmap.numEdges() > 1;
+			})).length > 0 )
+		{
+			outeredges.splice(outeredges.indexOf(nextdelete[0]),1);
+			planarmap.removeEdge(nextdelete[0].edge);
+		}
+		view.updateLayers();
+		view.updatePositions();
 	}
 }
 
