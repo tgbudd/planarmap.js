@@ -410,7 +410,7 @@ CMap.View = function(map,targetsvg) {
 	{
 		if( fullrefresh )
 		{
-			cornerLayer.selectAll("path").remove();
+			cornerLayer.selectAll("g").remove();
 		}
 		var selectededges = [];
 		planarmap.edges().forEach(function(e){
@@ -423,14 +423,16 @@ CMap.View = function(map,targetsvg) {
 				selectededges.push( e.getOriented(true) );
 			}
 		});
-		var cornerPaths = cornerLayer.selectAll("path")
+		var cornerPaths = cornerLayer.selectAll("g")
 			.data(selectededges,
 				function(e){return e.edge.uid + (e.reversed?"r":"l");});
 			
-		var newcorners = cornerPaths.enter().append("path");
+		var newcornerGroups = cornerPaths.enter().append("g");
+		newcornerGroups.append("path").attr("class","cornerarc");
+		newcornerGroups.append("path").attr("class","cornerline");
 		
 
-		view.updateCornerPositions(newcorners);
+		view.updateCornerPositions(newcornerGroups);
 		
 		cornerPaths.exit().remove();
 		return view;
@@ -494,11 +496,11 @@ CMap.View = function(map,targetsvg) {
 	}
 	
 	view.updateCornerPositions = function(corners){
-		corners = defaultFor(corners,cornerLayer.selectAll("path"));
+		corners = defaultFor(corners,cornerLayer.selectAll("g"));
 		function coorstr(p) { 
 			return p.x + " " + p.y;
 		}
-		corners.attr("d", function(edge) {
+		corners.select("path.cornerarc").attr("d", function(edge) {
 			if( edge.isReverse(edge.prev()) )
 			{
 				// Need full circle: treat as special case.
@@ -523,7 +525,11 @@ CMap.View = function(map,targetsvg) {
 					+ " Z";
 			}
 		});
-		
+		corners.select("path.cornerline").attr("d", function(edge) {
+			var tangent1 = mapToScreenCoor(CMap.getTangent(edge)).normalize();
+			return "M " + coorstr(mapToScreenCoor(edge.start().pos).plus(tangent1.copy().rotate90().mult(-1)))
+				+ " l " + coorstr(tangent1.mult(2.0*cornerradius));
+		});		
 		return view;
 	}
 	

@@ -5,6 +5,11 @@ function getRandomInt(min,max)
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function getRandomElement(items)
+{
+	return items[Math.floor(Math.random()*items.length)];
+}
+
 CMap.randomExcursion = function(numberSteps)
 {
 	var walk = [0];

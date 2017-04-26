@@ -42,9 +42,14 @@ svg path.face.selected {
 	stroke: red !important;
 	stroke-width: 2 !important;
 }
-svg .cornerLayer path {
+svg .cornerLayer .cornerarc {
 	stroke: none;
 	fill: #ff2222;
+	pointer-events: none;
+}
+svg .cornerLayer .cornerline {
+	stroke: #ff2222;
+	stroke-width: 1.2;
 	pointer-events: none;
 }
 svg text.label {
@@ -324,6 +329,7 @@ fileload.append("input").attr("type","button")
 			{
 				// make copy of example data
 				addStateToUndoHistory();
+				view.clearSelection();
 				var json = JSON.parse(JSON.stringify(exampledata[this.value]));
 				planarmap.fromJSON(json);
 				view.updateLayers(true);
@@ -786,7 +792,7 @@ function moveSelection(alongface,alongvertex)
 		selection.edges.length == 0 &&
 		selection.corners.length == 0 )
 	{
-		view.addToSelection(planarmap.edges().random().getOriented());
+		view.addToSelection(getRandomElement(planarmap.outerface().edges));
 		view.updateLayers();
 	}
 	if( selection.faces.length == 0 &&
@@ -804,11 +810,11 @@ function moveSelection(alongface,alongvertex)
 		{
 			view.addToSelection(corner.prev());
 		}
-		if( alongvertex == 1 )
+		if( alongvertex == -1 )
 		{
 			view.addToSelection(corner.reverse().next());
 		}
-		if( alongvertex == -1 )
+		if( alongvertex == 1 )
 		{
 			view.addToSelection(corner.prev().reverse());
 		}		
