@@ -212,7 +212,7 @@ CMap.LayoutUpdater = function() {
 		function(edge,comments){
 			comments = defaultFor(comments,{});
 			if( edge.right.edges.length == 1 
-				&& (!("outer" in comments) || comments.outer == "right") )
+				&& (!("outer" in comments) || comments.outer == "left") )
 			{
 				// new edge is a loop
 				var prevEdge = edge.getOriented().prev().reverse();
@@ -264,7 +264,7 @@ CMap.LayoutUpdater = function() {
 					} else {
 						// make sure the outer face is on the left of edge
 						// or the right
-						edge.layout.vert = CMap.findPathOutsidePolygon(pol,[coorleft.length,0],comments.outer === "left")
+						edge.layout.vert = CMap.findPathOutsidePolygon(pol,[(coorleft.length==pol.length?0:coorleft.length),0],comments.outer === "left")
 								.map(function(p){return new CMap.AuxiliaryVertex(p)});
 						edge.left.layout.outer = comments.outer === "left";
 						edge.right.layout.outer = comments.outer !== "left";

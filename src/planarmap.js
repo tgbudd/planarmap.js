@@ -572,6 +572,8 @@ CMap.PlanarMap = function (){
 		newface.edges.forEach(function(e){
 			e.left(newface);
 		});
+		// Note: if diagonal is a loop, i.e. corners[0]==corners[1], then
+		// edge.right has degree 1
 		doOnChange("insertDiagonal",function(f){f(edge,comments);});
 		if( edge.left.layout.outer )
 		{

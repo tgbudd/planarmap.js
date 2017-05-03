@@ -424,10 +424,19 @@ CMap.findPathOutsidePolygon = function(coor,cornerIds,outerleft)
 	newcoor2 = newcoor2.concat(newcoor.slice(index+1,closestIndex+1));
 	newcoor2 = newcoor2.concat(infpath.slice().reverse());
 	newcoor2 = newcoor2.concat(coor.slice(cornerIds[0]));
-	var newCornerIds = [ outerleft ? 
-		cornerIds[0] + 2*infpath.length + 10 : cornerIds[0],
-		cornerIds[1] < cornerIds[0] ? cornerIds[1] :
-		cornerIds[1] + 2*infpath.length + 10 ];
+	
+	var newCornerIds;
+	if( cornerIds[0] == cornerIds[1] && outerleft )
+	{
+		newCornerIds = [ cornerIds[0] + 2*infpath.length + 10,cornerIds[0]  ];
+	} else
+	{
+		newCornerIds = [ outerleft ? 
+			cornerIds[0] + 2*infpath.length + 10 : cornerIds[0],
+			cornerIds[1] < cornerIds[0] ? cornerIds[1] :
+			cornerIds[1] + 2*infpath.length + 10 ];
+	}
+	
 	return CMap.findPathInPolygon(newcoor2,newCornerIds);
 }
 

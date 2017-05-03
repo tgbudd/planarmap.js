@@ -38,6 +38,10 @@ svg path.face {
 	stroke: none;
 	fill: #ffffdd;
 }
+svg path.hole {
+	stroke: none;
+	fill: #ffffff;
+}
 svg path.face.selected {
 	stroke: red !important;
 	stroke-width: 2 !important;
@@ -236,13 +240,13 @@ input.color {
 
 
 <script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
-<script src="../src/geometry.js"></script>
-<script src="../src/layout.js"></script>
-<script src="../src/force.js"></script>
-<script src="../src/planarmap.js"></script>
-<script src="../src/view.js"></script>
-<script src="../src/algorithms.js"></script>
-<script src="../src/controlpanel.js"></script>
+<script src="../src/geometry.js?035"></script>
+<script src="../src/layout.js?035"></script>
+<script src="../src/force.js?035"></script>
+<script src="../src/planarmap.js?035"></script>
+<script src="../src/view.js?035"></script>
+<script src="../src/algorithms.js?035"></script>
+<script src="../src/controlpanel.js?035"></script>
 <script src="./data/planarmapexamples.js"></script>
 <script src="../thirdparty/crowbar/svg-crowbar.js"></script>
 
@@ -734,6 +738,13 @@ d3.select("body").on("keydown",function(){
 function copyAttributes(fromObject,toObject)
 {
 	toObject.class = toObject.class || {};
+	for(var key in toObject.class)
+	{
+		if( toObject.class.hasOwnProperty(key) )
+		{
+			toObject.class[key] = false;
+		}
+	}
 	for(var key in fromObject.class)
 	{
 		if( fromObject.class.hasOwnProperty(key) )
@@ -1010,12 +1021,18 @@ function createFace(degree)
 		selection.corners.length == 1 &&
 		selection.edges.length == 0 )
 	{
+		if( selection.corners[0].left().edges.length == 1 )
+		{
+			// inserting face in loop not supported yet
+			return;
+		}
+		
 		addStateToUndoHistory();
 		var corners = [selection.corners[0], selection.corners[0].next()];
 		view.clearSelection();
 		var newedges = [
 			planarmap.insertDiagonal(corners[0].left(),
-				[corners[0],corners[1]])
+				[corners[0],corners[1]],{outer: "left"})
 		];
 		copyAttributes(corners[0].edge,newedges[0]);
 		copyAttributes(corners[0].right(),corners[0].left());
@@ -1080,8 +1097,13 @@ function contractEdge(orientededge)
 		if( contractleft )
 		{
 			var nextedge = orientededge.prev();
+			var comment = {};
+			if( nextedge.left().layout.outer )
+			{
+				comment["outer"] = "left";
+			}
 			var newedge = planarmap.insertDiagonal(nextedge.left(),
-				[nextedge,orientededge.next()]);
+				[nextedge,orientededge.next()],comment);
 			copyAttributes(nextedge.edge,newedge);
 			copyAttributes(newedge.left,newedge.right);
 			copyAttributes(nextedge.right(),nextedge.left());
@@ -1089,8 +1111,13 @@ function contractEdge(orientededge)
 		} else
 		{
 			var nextedge = orientededge.reverse().next();
+			var comment = {};
+			if( nextedge.left().layout.outer )
+			{
+				comment["outer"] = "right";
+			}
 			var newedge = planarmap.insertDiagonal(nextedge.left(),
-				[nextedge.next(),nextedge.prev()]);
+				[nextedge.next(),nextedge.prev()],comment);
 			copyAttributes(newedge.left,newedge.right);
 			copyAttributes(nextedge.edge,newedge);
 			copyAttributes(nextedge.right(),newedge.left);
@@ -1155,18 +1182,34 @@ function startGlueEdges()
 			&& !p[0].isReverse(p[1])
 			&& p[0] != p[1]
 			&& (p[0].start() != p[1].end() || p[0].prev().isEqual(p[1]))
-			&& (p[1].start() != p[0].end() || p[1].prev().isEqual(p[0])); 
-		
+			&& (p[1].start() != p[0].end() || p[1].prev().isEqual(p[0]))
+			&& (!p[0].left().layout.outer || p[0].left().edges.length > 2); 
 	});
 	if( edgepairs.length == 1 )
 	{
 		addStateToUndoHistory();
 		view.clearSelection();
 		var edges = edgepairs[0];
+		var comment = {};
+		if( edges[0].left().layout.outer )
+		{
+			edges[0].left().class["hole"] = true;
+			if( edges[0].next().isEqual(edges[1]) )
+			{
+				comment["outer"] = "left";
+			} else if( edges[1].next().isEqual(edges[0]) )
+			{
+				comment["outer"] = "right";
+			} else
+			{
+				// here we need to do something extra to decide
+				comment["outer"] = "left";
+			}
+		}
 		if( !edges[0].next().isEqual(edges[1]) )
 		{
 			var tempedge0 = planarmap.insertDiagonal(edges[0].left(),
-				[edges[0].next(),edges[1]]);
+				[edges[0].next(),edges[1]],comment);
 			copyAttributes(tempedge0.left,tempedge0.right);
 			tempedge0.class["contract"] = true;
 			tempedge0.layout["relSpringLength"] = 0.05;
@@ -1175,7 +1218,7 @@ function startGlueEdges()
 		if( !edges[1].next().isEqual(edges[0]) )
 		{
 			var tempedge1 = planarmap.insertDiagonal(edges[1].left(),
-				[edges[0],edges[1].next()]);
+				[edges[0],edges[1].next()],comment);
 			copyAttributes(tempedge1.left,tempedge1.right);
 			tempedge1.class["contract"] = true;
 			tempedge1.layout["relSpringLength"] = 0.05;
