@@ -373,9 +373,9 @@ CMap.LayoutUpdater = function() {
 					CMap.faceIsNonSimple(e.right) )
 				{
 					e.layout.vert.splice(removeindex,0,removed);
-					console.log( "failed to remove aux. vert");
+					//console.log( "failed to remove aux. vert");
 				}else{		
-					console.log( "removed aux. vert");
+					//console.log( "removed aux. vert");
 				}
 			}
 		});
