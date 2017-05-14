@@ -241,13 +241,13 @@ input.color {
 
 
 <script charset="utf-8" src="../thirdparty/d3/d3.js"></script>
-<script src="../src/geometry.js?035"></script>
-<script src="../src/layout.js?035"></script>
-<script src="../src/force.js?035"></script>
-<script src="../src/planarmap.js?035"></script>
-<script src="../src/view.js?035"></script>
-<script src="../src/algorithms.js?035"></script>
-<script src="../src/controlpanel.js?035"></script>
+<script src="../src/geometry.js?037"></script>
+<script src="../src/layout.js?037"></script>
+<script src="../src/force.js?037"></script>
+<script src="../src/planarmap.js?037"></script>
+<script src="../src/view.js?037"></script>
+<script src="../src/algorithms.js?037"></script>
+<script src="../src/controlpanel.js?037"></script>
 <script src="./data/planarmapexamples.js"></script>
 <script src="../thirdparty/crowbar/svg-crowbar.js"></script>
 
@@ -757,6 +757,14 @@ function copyAttributes(fromObject,toObject)
 		}
 	}
 	toObject.attr.style = toObject.attr.style || {};
+	for(var key in toObject.attr.style)
+	{
+		if( toObject.attr.style.hasOwnProperty(key) )
+		{
+			toObject.attr.style[key] = null;
+		}
+	}
+
 	for(var key in fromObject.attr.style)
 	{
 		if( fromObject.attr.style.hasOwnProperty(key) )
@@ -1118,6 +1126,7 @@ function contractEdge(orientededge)
 			var newedge = planarmap.insertDiagonal(nextedge.left(),
 				[nextedge,orientededge.next()],comment);
 			copyAttributes(nextedge.edge,newedge);
+			transferMarker(nextedge,newedge.getOriented());
 			copyAttributes(newedge.left,newedge.right);
 			copyAttributes(nextedge.right(),nextedge.left());
 			planarmap.removeEdge(nextedge.edge);
@@ -1133,6 +1142,7 @@ function contractEdge(orientededge)
 				[nextedge.next(),nextedge.prev()],comment);
 			copyAttributes(newedge.left,newedge.right);
 			copyAttributes(nextedge.edge,newedge);
+			transferMarker(nextedge,newedge.getOriented(true));
 			copyAttributes(nextedge.right(),newedge.left);
 			planarmap.removeEdge(nextedge.edge);	
 		}
@@ -1155,6 +1165,28 @@ function filterInPlace(a, condition) {
 
   a.length = j;
   return a;
+}
+
+function transferMarker(fromEdge, toEdge)
+{
+	if( fromEdge.edge.attr.marker )
+	{
+		toEdge.edge.attr.marker = toEdge.edge.attr.marker || {};
+		if( fromEdge.edge.attr.marker.start &&
+			fromEdge.edge.attr.marker.start != "" )
+		{
+			toEdge.edge.attr.marker[ 
+				fromEdge.reversed == toEdge.reversed ? "start" : "end" ]
+				= fromEdge.edge.attr.marker.start;
+		}
+		if( fromEdge.edge.attr.marker.end &&
+			fromEdge.edge.attr.marker.end != "" )
+		{
+			toEdge.edge.attr.marker[ 
+				fromEdge.reversed == toEdge.reversed ? "end" : "start" ]
+				= fromEdge.edge.attr.marker.end;
+		}
+	}
 }
 
 function startGlueEdges()
@@ -1244,6 +1276,7 @@ function startGlueEdges()
 		// then perform contraction after delay
 		setTimeout(function(){
 			copyAttributes(edges[1].right(),edges[1].left());
+			transferMarker(edges[1],edges[0].reverse());
 			planarmap.removeEdge(edges[1].edge);
 			if( tempedge0 )
 			{
