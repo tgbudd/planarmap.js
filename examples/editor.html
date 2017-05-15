@@ -817,14 +817,25 @@ function moveSelection(alongface,alongvertex)
 	{
 		view.addToSelection(getRandomElement(planarmap.outerface().edges));
 		view.updateLayers();
-	}
-	if( selection.faces.length == 0 &&
+	} else if( selection.faces.length == 1 &&
+		selection.nodes.length == 0 &&
+		selection.edges.length == 0 &&
+		selection.corners.length == 0 )
+	{
+		var selectcorner = getRandomElement(selection.faces[0].edges);
+		view.clearSelection();
+		view.addToSelection(selectcorner);
+		view.updateLayers();
+	} else if( selection.faces.length == 0 &&
 		selection.nodes.length == 0 &&
 		selection.edges.length == 0 &&
 		selection.corners.length == 1 )
 	{
 		var corner = selection.corners[0];
-		view.clearSelection();
+		if( !d3.event.shiftKey )
+		{
+			view.clearSelection();
+		}
 		if( alongface == 1 )
 		{
 			view.addToSelection(corner.next());
@@ -842,8 +853,36 @@ function moveSelection(alongface,alongvertex)
 			view.addToSelection(corner.prev().reverse());
 		}		
 		view.updateLayers();
-	}
-	
+	} else if( selection.faces.length == 0 &&
+		selection.nodes.length == 0 &&
+		selection.edges.length == 0 &&
+		selection.corners.length == 2 )
+	{
+		var corner0 = selection.corners[0];
+		var corner1 = selection.corners[1];
+		view.clearSelection();
+		if( d3.event.shiftKey )
+		{
+			view.addToSelection(corner0);
+		}
+		if( alongface == 1 )
+		{
+			view.addToSelection(corner1.next());
+		}
+		if( alongface == -1 )
+		{
+			view.addToSelection(corner1.prev());
+		}
+		if( alongvertex == -1 )
+		{
+			view.addToSelection(corner1.reverse().next());
+		}
+		if( alongvertex == 1 )
+		{
+			view.addToSelection(corner1.prev().reverse());
+		}		
+		view.updateLayers();
+	}	
 }
 
 function createEdge()
