@@ -216,6 +216,9 @@ input.color {
 </div>
 <div class="editorhints">
 	<dl class="controls">
+		<dt>H</dt><dd>Show/hide controls</dd>
+	</dl>
+	<dl class="controls" id="controllist">
 		<dt>Drag</dt><dd>Pan or drag vertex</dd>
 		<dt>Mousewheel</dt><dd>Zoom</dd>
 		<dt>Click</dt><dd>Select</dd>
@@ -755,6 +758,9 @@ d3.select("body").on("keydown",function(){
 	} else if ( d3.event.keyCode == 71 ) // G
 	{
 		startGlueEdges();
+	} else if ( d3.event.keyCode == 72 ) // H
+	{
+		toggleShowControls();
 	} else if ( d3.event.keyCode == 80 ) // P
 	{
 		startPeelStep();
@@ -833,6 +839,12 @@ function performUndo()
 function addStateToUndoHistory()
 {
 	undoHistory.push( JSON.stringify(planarmap) );
+}
+
+function toggleShowControls()
+{
+	var list = document.getElementById("controllist");
+    list.style.display = (list.style.display == "none") ? "block" : "none";
 }
 
 function moveSelection(alongface,alongvertex)
