@@ -8,13 +8,15 @@ force-driven layout algorithm.
 
 Check out some examples here:
 * Peeling process of a uniform infinite planar triangulation: 
-(http://www.nbi.dk/~budd/planarmap/examples/peeling.html)
+(http://hef.ru.nl/~tbudd/planarmap/examples/peeling.html)
 * Schaeffer's bijection between labeled trees and quadrangulations:
-(http://www.nbi.dk/~budd/planarmap/examples/schaefferbijection.html)
+(http://hef.ru.nl/~tbudd/planarmap/examples/schaefferbijection.html)
 
-However, so far the main application is a planar map editor, which 
+## Planar map editor
+
+So far the main application is a planar map editor, which 
 allows loading and saving of planar maps in SVG or JSON format. Try the
-editor here: (http://www.nbi.dk/~budd/planarmap/examples/editor.html)
+editor here: (http://hef.ru.nl/~tbudd/planarmap/examples/editor.html)
 
 Any comments, suggestions, contributions are more than welcome.
 
@@ -32,5 +34,5 @@ SVG, e.g. for editing in [Inkscape](inkscape.org).
 ## License
 
 MIT license: free to reuse. If used in an academic context, attribution
-(to [Timothy Budd](http://www.nbi.dk/~budd/)) would be appreciated but is not 
+(to [Timothy Budd](http://hef.ru.nl/~tbudd/)) would be appreciated but is not 
 mandatory.
