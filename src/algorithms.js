@@ -486,3 +486,35 @@ CMap.addDualMap = function(planarmap,includeouter,intersectionnodeclass,dualedge
 		}
 	});
 }
+
+// Split every edge, insert new node in every face and connect with edges,
+// such that the resulting map corresponds to map + dual map.
+CMap.addPartialDualMap = function(planarmap,faces,intersectionnodeclass,dualedgeclass,dualnodeclass) {
+	intersectionnodeclass = defaultFor(intersectionnodeclass,"intersection");
+	dualedgeclass = defaultFor(dualedgeclass,"dualedge");
+	dualnodeclass = defaultFor(dualnodeclass,"dualnode");
+	planarmap.edges().forEach(function(e){
+		if( faces.indexOf( e.left ) > -1 && faces.indexOf( e.right ) > -1 )
+		{
+			var node = planarmap.splitEdge(e.getOriented());
+			node.class[intersectionnodeclass] = true;
+		}
+	});	
+	planarmap.faces().forEach(function(f){
+		if( faces.indexOf(f) > -1 ) {
+			var corners = f.edges.filter(function(e){ return e.start().class[intersectionnodeclass]; });
+			var newEdge = null;
+			corners.forEach(function(c){ 
+				if(!newEdge) {
+					newEdge = planarmap.insertEdgeNextTo(c)
+						.getOriented(true);
+					newEdge.start().class[dualnodeclass] = true;
+				} else {
+					newEdge = planarmap.insertDiagonal(newEdge.left(),[newEdge,c])
+						.getOriented();
+				}	
+				newEdge.edge.class[dualedgeclass] = true;
+			});
+		}
+	});
+}
